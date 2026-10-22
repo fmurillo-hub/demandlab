@@ -1,0 +1,1631 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>DemandLab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Concepto: cabina de planificación. Riel de etapas a la izquierda (el ciclo S&OP), área de trabajo a la derecha, resultados siempre visibles junto a los controles. */
+:root {
+  --bg: #F3F5F9; --surface: #FFFFFF; --surface2: #EBEFF6; --line: #D8DFEA; --line2: #C3CCDB;
+  --ink: #14213F; --ink2: #44516B; --muted: #6D7890;
+  --navy: #14274E; --navy-ink: #FFFFFF;
+  --teal: #12A5A0; --teal-ink: #0A736F; --teal-soft: #DDF3F1;
+  --mustard: #E2A72B; --mustard-ink: #7E5800; --mustard-soft: #FBF0D5;
+  --coral: #E4604A; --coral-ink: #B23B27; --coral-soft: #FBE3DE;
+  --info-soft: #E3E9F6;
+  --s-hist: #14274E; --s-base: #0E9690; --s-opt: #D99A12; --s-pes: #E4604A; --s-conf: #6D7890; --s-cap: #14213F;
+  --grid: #E3E8F0; --shadow: 0 1px 2px rgba(20,33,63,.06), 0 6px 18px rgba(20,33,63,.05);
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0D1526; --surface: #15203A; --surface2: #1C2947; --line: #2A3858; --line2: #3A4A70;
+  --ink: #E9EEF8; --ink2: #B2BDD3; --muted: #8592AD;
+  --navy: #9DB8F2; --navy-ink: #0D1526;
+  --teal: #35C4BD; --teal-ink: #5ED8D1; --teal-soft: #14363A;
+  --mustard: #F0B93F; --mustard-ink: #F3C867; --mustard-soft: #3A2F14;
+  --coral: #F07C67; --coral-ink: #F59A89; --coral-soft: #402320;
+  --info-soft: #1F2D4F;
+  --s-hist: #9DB8F2; --s-base: #35C4BD; --s-opt: #F0B93F; --s-pes: #F07C67; --s-conf: #8592AD; --s-cap: #E9EEF8;
+  --grid: #263453; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0D1526; --surface: #15203A; --surface2: #1C2947; --line: #2A3858; --line2: #3A4A70;
+  --ink: #E9EEF8; --ink2: #B2BDD3; --muted: #8592AD;
+  --navy: #9DB8F2; --navy-ink: #0D1526;
+  --teal: #35C4BD; --teal-ink: #5ED8D1; --teal-soft: #14363A;
+  --mustard: #F0B93F; --mustard-ink: #F3C867; --mustard-soft: #3A2F14;
+  --coral: #F07C67; --coral-ink: #F59A89; --coral-soft: #402320;
+  --info-soft: #1F2D4F;
+  --s-hist: #9DB8F2; --s-base: #35C4BD; --s-opt: #F0B93F; --s-pes: #F07C67; --s-conf: #8592AD; --s-cap: #E9EEF8;
+  --grid: #263453; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25); color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html, body { background: var(--bg); }
+body { margin: 0; color: var(--ink); font: 400 15px/1.5 var(--f-body); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 40px; font-variant-numeric: tabular-nums; }
+h1, h2, h3, h4 { font-family: var(--f-display); margin: 0; letter-spacing: -.01em; text-wrap: balance; color: var(--ink); }
+p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; border-radius: 6px; }
+.wrap { max-width: 1440px; margin: 0 auto; }
+
+/* barra superior */
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 14px 0 12px; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 30; }
+.brand { display: flex; align-items: baseline; gap: 12px; min-width: 0; margin-right: auto; }
+.brand h1 { font-size: 26px; font-weight: 800; }
+.brand h1 b { color: var(--teal-ink); font-weight: 800; }
+.brand span { color: var(--ink2); font-size: 14px; }
+.biz-pill { display: inline-flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: 13px; max-width: 100%; }
+.biz-pill i { width: 9px; height: 9px; border-radius: 50%; background: var(--mustard); flex: none; }
+.biz-pill i.own { background: var(--teal); }
+.tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { border: 1px solid var(--line2); background: var(--surface); border-radius: 8px; padding: 8px 14px; cursor: pointer; font-weight: 500; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; transition: background .12s, border-color .12s; }
+.btn:hover { background: var(--surface2); }
+.btn.primary { background: var(--navy); color: var(--navy-ink); border-color: var(--navy); }
+.btn.primary:hover { filter: brightness(1.12); background: var(--navy); }
+.btn.teal { background: var(--teal-ink); color: var(--navy-ink); border-color: var(--teal-ink); }
+.btn.teal:hover { filter: brightness(1.1); background: var(--teal-ink); }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--ink2); }
+.btn.sm { padding: 4px 10px; font-size: 13px; }
+.btn[aria-pressed="true"] { background: var(--mustard-soft); border-color: var(--mustard); color: var(--mustard-ink); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* estructura */
+.shell { display: grid; grid-template-columns: 236px minmax(0, 1fr); gap: 28px; padding-top: 22px; align-items: start; }
+.rail { position: sticky; top: calc(var(--topH, 88px) + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 4px; }
+.rail .grp { font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 14px 8px 4px; font-weight: 600; }
+.rail .grp:first-child { margin-top: 0; }
+.nav { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: center; padding: 9px 10px; border-radius: 10px; color: var(--ink2); font-weight: 500; position: relative; }
+.nav:hover { background: var(--surface2); }
+.nav:focus-visible { outline: 3px solid var(--teal); outline-offset: 1px; }
+.nav .n { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 700 13px var(--f-display); border: 1.5px solid var(--line2); color: var(--ink2); background: var(--surface); }
+.nav .sub { display: block; font-size: 12px; font-weight: 400; color: var(--muted); }
+.nav[aria-current="page"] { background: var(--surface); box-shadow: var(--shadow); color: var(--ink); }
+.nav[aria-current="page"] .n { background: var(--navy); border-color: var(--navy); color: var(--navy-ink); }
+.nav.tool .n { border-radius: 8px; font-size: 14px; }
+.nav.tool[aria-current="page"] .n { background: var(--teal-ink); border-color: var(--teal-ink); color: var(--navy-ink); }
+.nav .lbl { line-height: 1.2; }
+.main { min-width: 0; }
+
+/* contenido */
+.stagehead { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; margin-bottom: 18px; }
+.stagehead .kicker { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--teal-ink); font-weight: 600; }
+.stagehead h2 { font-size: 34px; line-height: 1.08; font-weight: 800; margin-top: 2px; }
+.stagehead p { color: var(--ink2); max-width: 70ch; margin-top: 6px; }
+.grid { display: grid; gap: 18px; min-width: 0; }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.split { grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); align-items: start; }
+.split.wide { grid-template-columns: minmax(0, 1fr) minmax(300px, 400px); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; min-width: 0; box-shadow: var(--shadow); }
+.card h3 { font-size: 19px; font-weight: 700; }
+.card h4 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.card .sub { color: var(--ink2); font-size: 14px; margin-top: 2px; }
+.card .hd { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.plain { background: none; border: none; box-shadow: none; padding: 0; }
+.stack { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.sp { flex: 1; }
+.muted { color: var(--muted); } .ink2 { color: var(--ink2); }
+.small { font-size: 13px; }
+.mono { font-family: var(--f-mono); font-size: 13px; }
+.tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--surface2); color: var(--ink2); white-space: nowrap; }
+.tag.sim { background: var(--mustard-soft); color: var(--mustard-ink); }
+.tag.ok { background: var(--teal-soft); color: var(--teal-ink); }
+.tag.warn { background: var(--mustard-soft); color: var(--mustard-ink); }
+.tag.crit { background: var(--coral-soft); color: var(--coral-ink); }
+.tag.info { background: var(--info-soft); color: var(--ink2); }
+
+/* tarjetas de negocios */
+.biz-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.bcard { all: unset; box-sizing: border-box; cursor: pointer; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--shadow); min-width: 0; transition: transform .12s, border-color .12s; }
+.bcard:hover { transform: translateY(-2px); border-color: var(--teal); }
+.bcard:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+.bcard .ico { width: 46px; height: 46px; border-radius: 12px; background: var(--info-soft); display: grid; place-items: center; }
+.bcard h3 { font-size: 18px; font-weight: 700; }
+.bcard p { color: var(--ink2); font-size: 14px; flex: 1; }
+.bcard .meta { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.bcard.own { border: 2px dashed var(--teal); background: var(--teal-soft); }
+.bcard.own .ico { background: var(--teal-ink); }
+.bcard.sel { border-color: var(--navy); box-shadow: 0 0 0 2px var(--navy), var(--shadow); }
+.ico svg { width: 26px; height: 26px; stroke: var(--navy); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.bcard.own .ico svg { stroke: var(--navy-ink); }
+
+/* formularios */
+.fld { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.fld > label, .lbl2 { font-size: 13px; font-weight: 600; color: var(--ink2); }
+.fld .hint { font-size: 12px; color: var(--muted); }
+input[type="text"], input[type="number"], select, textarea { width: 100%; background: var(--surface); border: 1px solid var(--line2); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+input[type="number"] { font-variant-numeric: tabular-nums; }
+textarea { resize: vertical; font-family: var(--f-mono); font-size: 13px; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+.cells { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 8px; }
+.cell { display: flex; flex-direction: column; gap: 2px; }
+.cell span { font-size: 11px; color: var(--muted); }
+.cell input { padding: 6px 8px; }
+.cell.miss input { border-color: var(--mustard); background: var(--mustard-soft); }
+input[type="range"] { width: 100%; accent-color: var(--teal-ink); height: 26px; margin: 0; }
+.sw { position: relative; width: 40px; height: 22px; flex: none; }
+.sw input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
+.sw i { position: absolute; inset: 0; border-radius: 999px; background: var(--line2); transition: background .12s; }
+.sw i::after { content: ""; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .12s; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.sw input:checked + i { background: var(--teal-ink); }
+.sw input:checked + i::after { transform: translateX(18px); }
+.sw input:focus-visible + i { outline: 3px solid var(--teal); outline-offset: 2px; }
+.ext { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 8px; background: var(--surface); }
+.ext.on { border-color: var(--teal); background: var(--teal-soft); }
+.ext .top2 { display: flex; align-items: center; gap: 10px; }
+.ext .top2 b { font-size: 14px; flex: 1; font-weight: 600; }
+.ext .ctl { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.ext .ctl.one { grid-template-columns: 1fr; }
+.ext .ctl label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 2px; }
+.ext .note { font-size: 12px; color: var(--ink2); }
+.ext:not(.on) .ctl, .ext:not(.on) .note { opacity: .55; }
+
+/* KPIs */
+.kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.kpi .k { font-size: 12px; color: var(--ink2); font-weight: 600; }
+.kpi .v { font: 700 28px/1.15 var(--f-display); letter-spacing: -.02em; overflow-wrap: anywhere; }
+.kpi .v small { font: 500 13px var(--f-body); color: var(--muted); margin-left: 4px; letter-spacing: 0; }
+.kpi .d { font-size: 12px; color: var(--muted); }
+.kpi.crit { border-color: var(--coral); background: var(--coral-soft); } .kpi.crit .v { color: var(--coral-ink); }
+.kpi.warn { border-color: var(--mustard); background: var(--mustard-soft); } .kpi.warn .v { color: var(--mustard-ink); }
+.kpi.ok .v { color: var(--teal-ink); }
+
+/* alertas */
+.alerts { display: flex; flex-direction: column; gap: 10px; }
+.alert { display: grid; grid-template-columns: 26px 1fr; gap: 10px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); }
+.alert .ic { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font: 700 14px var(--f-display); }
+.alert b { display: block; font-size: 14px; margin-bottom: 1px; }
+.alert p { font-size: 14px; color: var(--ink2); }
+.alert.crit { background: var(--coral-soft); border-color: var(--coral); } .alert.crit .ic { background: var(--coral-ink); }
+.alert.warn { background: var(--mustard-soft); border-color: var(--mustard); } .alert.warn .ic { background: var(--mustard-ink); }
+.alert.info { background: var(--info-soft); } .alert.info .ic { background: var(--ink2); }
+.alert.ok { background: var(--teal-soft); border-color: var(--teal); } .alert.ok .ic { background: var(--teal-ink); }
+.alert .ic { color: var(--navy-ink); }
+
+/* tablas */
+.tw { overflow-x: auto; max-width: 100%; border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { padding: 8px 12px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th:first-child, td:first-child { text-align: left; }
+th { font-size: 12px; font-weight: 600; color: var(--ink2); background: var(--surface2); position: sticky; top: 0; }
+tr:last-child td { border-bottom: none; }
+td.bad { color: var(--coral-ink); font-weight: 600; } td.good { color: var(--teal-ink); font-weight: 600; }
+tr.sel td { background: var(--teal-soft); }
+td input[type="number"] { width: 96px; padding: 4px 8px; text-align: right; }
+.cmp td:first-child { font-weight: 600; }
+
+/* gráficos */
+.chart { position: relative; min-width: 0; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 8px; font-size: 13px; color: var(--ink2); }
+.chart .legend span { display: inline-flex; align-items: center; gap: 6px; }
+.chart .legend i { width: 18px; height: 0; border-top: 3px solid; display: inline-block; border-radius: 2px; }
+.chart .legend i.bar { height: 10px; width: 10px; border: 0; border-radius: 2px; }
+.chart .tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line2); border-radius: 10px; padding: 8px 10px; font-size: 12.5px; box-shadow: var(--shadow); z-index: 5; min-width: 150px; display: none; }
+.chart .tip b { display: block; margin-bottom: 3px; }
+.chart .tip div { display: flex; justify-content: space-between; gap: 14px; }
+.chart .tip div span:first-child { display: inline-flex; align-items: center; gap: 6px; color: var(--ink2); }
+.chart .tip i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.ax text { fill: var(--muted); font: 11.5px var(--f-body); }
+.chart .dl { font: 600 11.5px var(--f-body); }
+.tbl-toggle { font-size: 12px; }
+
+/* varios */
+.edu { display: none; background: var(--mustard-soft); border: 1px solid var(--mustard); border-radius: 12px; padding: 14px 16px; font-size: 14px; color: var(--ink); }
+body.edu-on .edu { display: block; }
+.edu h4 { color: var(--mustard-ink); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
+.edu p + p { margin-top: 6px; }
+.formula { font-family: var(--f-mono); font-size: 13px; background: var(--surface2); border-radius: 8px; padding: 8px 10px; overflow-x: auto; white-space: nowrap; margin: 6px 0; }
+.callout { border-left: 4px solid var(--teal); background: var(--teal-soft); padding: 12px 16px; border-radius: 0 10px 10px 0; font-size: 15px; }
+.callout.warn { border-color: var(--mustard); background: var(--mustard-soft); }
+.callout.crit { border-color: var(--coral); background: var(--coral-soft); }
+ul.clean { margin: 6px 0 0; padding-left: 18px; } ul.clean li { margin: 3px 0; }
+.qa { border-top: 1px solid var(--line); padding: 12px 0; } .qa:first-of-type { border-top: 0; padding-top: 0; }
+.qa .q { font-weight: 600; font-size: 14px; }
+.qa .a { color: var(--ink2); font-size: 14px; margin-top: 2px; }
+.qa .dc { font-size: 13px; margin-top: 4px; color: var(--teal-ink); font-weight: 500; }
+.area { border-top: 5px solid var(--navy); }
+.area.a1 { border-top-color: var(--mustard); } .area.a2 { border-top-color: var(--teal); } .area.a3 { border-top-color: var(--navy); } .area.a4 { border-top-color: var(--coral); }
+.radio { display: grid; gap: 8px; }
+.opt { display: grid; grid-template-columns: 22px 1fr; gap: 10px; padding: 10px 12px; border: 1px solid var(--line2); border-radius: 10px; cursor: pointer; background: var(--surface); }
+.opt:has(input:checked) { border-color: var(--teal-ink); background: var(--teal-soft); box-shadow: 0 0 0 1px var(--teal-ink); }
+.opt input { margin: 3px 0 0; accent-color: var(--teal-ink); }
+.opt b { font-size: 14px; } .opt span { font-size: 12.5px; color: var(--ink2); display: block; }
+.ctl-row { display: grid; gap: 6px; }
+.ctl-row .rtop { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.ctl-row .rtop label { font-size: 14px; font-weight: 600; }
+.ctl-row .rin { display: grid; grid-template-columns: 1fr 100px; gap: 10px; align-items: center; }
+.ctl-row .sg { font-size: 12px; color: var(--muted); }
+.ctl-row .sg button { all: unset; cursor: pointer; color: var(--teal-ink); text-decoration: underline; }
+.ctl-row .mod { color: var(--mustard-ink); font-weight: 600; }
+.compare { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+.cmpc { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.cmpc .k { font-size: 12px; font-weight: 600; color: var(--ink2); }
+.cmpc .bar { display: grid; grid-template-columns: 74px 1fr 82px; align-items: center; gap: 8px; margin-top: 8px; font-size: 12.5px; }
+.cmpc .bar .tr { height: 12px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+.cmpc .bar .tr i { display: block; height: 100%; border-radius: 4px; }
+.cmpc .bar span:last-child { text-align: right; font-weight: 600; }
+.cmpc .dl2 { margin-top: 8px; font-size: 13px; font-weight: 600; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { all: unset; box-sizing: border-box; cursor: pointer; padding: 7px 13px; border: 1px solid var(--line2); border-radius: 999px; font-size: 13.5px; background: var(--surface); }
+.chip:hover { background: var(--surface2); } .chip:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+.chip[aria-pressed="true"] { background: var(--navy); color: var(--navy-ink); border-color: var(--navy); }
+.acc { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.acc + .acc { margin-top: 10px; }
+.acc summary { cursor: pointer; padding: 14px 16px; font-weight: 600; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.acc summary::-webkit-details-marker { display: none; }
+.acc summary::after { content: "+"; font: 600 20px var(--f-display); color: var(--teal-ink); }
+.acc[open] summary::after { content: "–"; }
+.acc .body { padding: 0 16px 16px; color: var(--ink2); font-size: 14.5px; }
+.acc .body .ex { margin-top: 8px; padding: 10px 12px; background: var(--surface2); border-radius: 8px; color: var(--ink); font-size: 14px; }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--navy); color: var(--navy-ink); padding: 10px 18px; border-radius: 10px; font-size: 14px; z-index: 50; max-width: calc(100vw - 40px); box-shadow: var(--shadow); }
+.dlg { position: fixed; inset: 0; background: rgba(10,16,32,.55); display: grid; place-items: center; z-index: 60; padding: 20px; }
+.dlg .box { background: var(--surface); border-radius: 14px; padding: 20px; width: min(720px, 100%); max-height: 90vh; display: flex; flex-direction: column; gap: 12px; }
+.dlg textarea { min-height: 260px; }
+.cycle svg { width: 100%; max-width: 520px; display: block; margin: 0 auto; }
+.cycle text { font-family: var(--f-body); }
+.hero { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 28px; align-items: center; margin-bottom: 22px; }
+.hero h2 { font-size: 40px; font-weight: 800; line-height: 1.05; }
+.hero p { color: var(--ink2); font-size: 16.5px; margin-top: 10px; max-width: 58ch; }
+.flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 14px; font: 700 12.5px var(--f-display); letter-spacing: .06em; }
+.flow span { padding: 5px 10px; border-radius: 999px; background: var(--navy); color: var(--navy-ink); }
+.flow i { font-style: normal; color: var(--muted); }
+.sparkbox { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; box-shadow: var(--shadow); }
+.empty { text-align: center; padding: 40px 20px; color: var(--ink2); }
+.nowrap { white-space: nowrap; }
+.err-list li { color: var(--coral-ink); }
+
+@media (max-width: 1100px) {
+  .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .g3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .split, .split.wide { grid-template-columns: minmax(0, 1fr); }
+  .biz-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 860px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 14px; padding-top: 14px; }
+  .rail { position: static; flex-direction: row; overflow-x: auto; gap: 6px; padding-bottom: 6px; margin: 0 -2px; }
+  .rail .grp { display: none; }
+  .nav { grid-template-columns: 26px auto; flex: none; padding: 7px 10px; background: var(--surface); border: 1px solid var(--line); }
+  .nav .n { width: 26px; height: 26px; font-size: 12px; } .nav .sub { display: none; }
+  .hero { grid-template-columns: minmax(0, 1fr); }
+  .hero h2, .stagehead h2 { font-size: 28px; }
+}
+@media (max-width: 640px) {
+  .g2, .g3, .g4, .biz-grid { grid-template-columns: minmax(0, 1fr); }
+  .brand span { display: none; }
+  .brand h1 { font-size: 22px; }
+  .ext .ctl { grid-template-columns: 1fr 1fr 1fr; }
+  .kpi .v { font-size: 24px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+</style>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1><b>Demand</b>Lab</h1><span>Del dato a la decisión</span></div>
+    <div id="bizpill"></div>
+    <div class="tools">
+      <button class="btn" id="edubtn" data-act="edu" aria-pressed="false">¿Por qué sucede esto?</button>
+      <button class="btn" data-act="csv">Exportar CSV</button>
+      <button class="btn" data-act="report">Reporte imprimible</button>
+      <button class="btn ghost" data-act="reset">Reiniciar</button>
+    </div>
+  </header>
+  <div class="shell">
+    <nav class="rail" id="rail" aria-label="Etapas del ciclo S&OP y herramientas"></nav>
+    <main class="main" id="main"></main>
+  </div>
+</div>
+<script>
+/* ===== DemandLab · motor de cálculo (sin dependencias) ===== */
+var DL = (function () {
+  'use strict';
+  var MAXH = 12, MAXN = 24;
+
+  function num(x, d) { if (x === '' || x === null || x === undefined) return d; var v = Number(x); return isFinite(v) ? v : d; }
+  function clamp(x, a, b) { return Math.min(b, Math.max(a, x)); }
+  function sum(a) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i]; return s; }
+  function mean(a) { return a.length ? sum(a) / a.length : 0; }
+  function sd(a) { if (a.length < 2) return 0; var m = mean(a), s = 0; for (var i = 0; i < a.length; i++) s += (a[i] - m) * (a[i] - m); return Math.sqrt(s / (a.length - 1)); }
+  function rnd(x, d) { var f = Math.pow(10, d || 0); return Math.round(x * f) / f; }
+
+  /* z para nivel de servicio (inversa de la normal, aproximación de Acklam) */
+  function zOf(p) {
+    p = clamp(p, 0.5, 0.9995);
+    var a = [-39.69683028665376, 220.9460984245205, -275.9285104469687, 138.357751867269, -30.66479806614716, 2.506628277459239];
+    var b = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771972, -13.28068155288572];
+    var c = [-0.007784894002430293, -0.3223964580411365, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783];
+    var d = [0.007784695709041462, 0.3224671290700398, 2.445134137142996, 3.754408661907416];
+    var pl = 0.02425, q, r;
+    if (p < pl) { q = Math.sqrt(-2 * Math.log(p)); return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+    if (p <= 1 - pl) { q = p - 0.5; r = q * q; return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1); }
+    q = Math.sqrt(-2 * Math.log(1 - p));
+    return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+  }
+
+  var PERIODS = { diario: { l: 'día', pl: 'días', season: 7 }, semanal: { l: 'semana', pl: 'semanas', season: 4 }, mensual: { l: 'mes', pl: 'meses', season: 12 } };
+
+  var EXT_DEFS = [
+    { id: 'estac', label: 'Estacionalidad (manual)', kind: 'level', pct: 15, from: 1, to: 2, note: 'Efecto de temporada que tú esperas en los períodos indicados.' },
+    { id: 'promo', label: 'Promociones y publicidad', kind: 'level', pct: 12, from: 2, to: 3, note: 'Campaña planificada. Aumenta la demanda, pero reduce el margen si hay descuento.' },
+    { id: 'precio', label: 'Cambios de precio (propios o de mercado)', kind: 'level', pct: -5, from: 1, to: 12, note: 'No lo combines con la decisión de precio de Ejecución: contaría el mismo efecto dos veces.' },
+    { id: 'infl', label: 'Inflación', kind: 'trend', pct: -0.3, from: 1, to: 12, note: 'Pérdida de poder de compra por período, acumulativa.' },
+    { id: 'econ', label: 'Crecimiento o contracción económica', kind: 'trend', pct: 0.5, from: 1, to: 12, note: 'Variación por período, acumulativa.' },
+    { id: 'comp', label: 'Competencia', kind: 'level', pct: -8, from: 1, to: 12, note: 'Un competidor nuevo o una promoción rival le quita clientes.' },
+    { id: 'clima', label: 'Clima', kind: 'level', pct: 6, from: 1, to: 3, note: 'Calor, lluvia o frío que cambian el consumo.' },
+    { id: 'fest', label: 'Festividades y eventos especiales', kind: 'level', pct: 20, from: 3, to: 3, note: 'Feriados, ferias o eventos puntuales.' },
+    { id: 'tend', label: 'Tendencias del mercado', kind: 'trend', pct: 1, from: 1, to: 12, note: 'Crecimiento o caída estructural del sector, por período.' },
+    { id: 'pref', label: 'Cambios en preferencias del consumidor', kind: 'level', pct: 5, from: 1, to: 12, note: 'Cambio de gustos hacia o lejos de tu producto.' }
+  ];
+  function defaultExternals() { return EXT_DEFS.map(function (e) { var o = {}; for (var k in e) o[k] = e[k]; o.on = false; return o; }); }
+
+  function newBiz() {
+    return {
+      id: 'propio', simulated: false, currency: '$', name: 'Mi negocio', product: 'Producto', unit: 'unidades', period: 'semanal', desc: '',
+      price: 10, cost: 6, inventory: 0, capacity: null, supply: 'buy',
+      history: [null, null, null, null, null, null], confirmed: [], pendingOrders: 0, inTransitQty: 0, inTransitAt: 1,
+      leadTime: 1, leadTimeSd: 0, serviceLevel: 95, holdCost: 0.1, stockoutCost: 0, mktBase: null, priceElasticity: -1.2, mktElasticity: 0.1,
+      horizon: 6, method: 'auto', maWindow: 3, alpha: 0.4, seasonAuto: false, seasonLen: 4, scenarioPct: 15,
+      externals: defaultExternals(),
+      dec: { produceTotal: null, buyTotal: null, marketing: null, price: null, targetInv: null, capacity: null, serviceLevel: null, leadTime: null },
+      actuals: [], errorLog: [], cycles: 0
+    };
+  }
+
+  /* ---------- validación y limpieza ---------- */
+  function cleanHistory(raw) {
+    var errors = [], warnings = [], y = [], missing = [], i;
+    var arr = (raw || []).slice(0, MAXN);
+    var vals = arr.map(function (v) { if (v === '' || v === null || v === undefined) return null; var n = Number(v); if (!isFinite(n)) { errors.push('Hay un valor no numérico en el historial.'); return null; } if (n < 0) { errors.push('Las ventas no pueden ser negativas.'); return null; } return n; });
+    while (vals.length && vals[vals.length - 1] === null) vals.pop();
+    var first = 0; while (first < vals.length && vals[first] === null) first++;
+    vals = vals.slice(first);
+    for (i = 0; i < vals.length; i++) {
+      if (vals[i] !== null) { y.push(vals[i]); continue; }
+      var l = i - 1; while (l >= 0 && vals[l] === null) l--;
+      var r = i + 1; while (r < vals.length && vals[r] === null) r++;
+      var lv = y[l], rv = vals[r];
+      y.push(lv + (rv - lv) * (i - l) / (r - l)); missing.push(i);
+    }
+    if (missing.length) warnings.push('Se estimaron ' + missing.length + ' valor(es) faltante(s) por interpolación lineal; revísalos.');
+    var n = y.length;
+    if (n < 3) errors.push('Se necesitan al menos 3 períodos con ventas históricas (hay ' + n + ').');
+    if (n > 0 && sum(y) === 0) warnings.push('Todas las ventas históricas son cero: el pronóstico será cero.');
+    if (n > 0 && y.filter(function (v) { return v === 0; }).length > 0 && sum(y) > 0) warnings.push('Hay períodos con demanda cero. Se usan MAE y WAPE (no MAPE) para evitar divisiones por cero. Si fueron faltantes de inventario, las ventas subestiman la demanda.');
+    return { y: y, missing: missing, errors: errors, warnings: warnings };
+  }
+
+  function validate(b) {
+    var h = cleanHistory(b.history), e = h.errors.slice(), w = h.warnings.slice();
+    if (!(num(b.price, 0) > 0)) e.push('El precio de venta debe ser mayor que cero.');
+    if (num(b.cost, -1) < 0) e.push('El costo unitario no puede ser negativo.');
+    if (num(b.inventory, 0) < 0) e.push('El inventario no puede ser negativo.');
+    if (b.capacity !== null && b.capacity !== '' && num(b.capacity, -1) <= 0) e.push('La capacidad debe ser mayor que cero (o déjala vacía para "sin límite").');
+    if (num(b.leadTime, 0) < 0 || num(b.leadTime, 0) > 12) e.push('El tiempo de reposición debe estar entre 0 y 12 períodos.');
+    if (!(num(b.horizon, 0) >= 1 && num(b.horizon, 0) <= MAXH)) e.push('El horizonte debe estar entre 1 y 12 períodos.');
+    if (num(b.cost, 0) > num(b.price, 0) && num(b.price, 0) > 0) w.push('El costo unitario es mayor que el precio: cada venta genera pérdida.');
+    if (b.capacity === null || b.capacity === '') w.push('Sin capacidad definida: se asume abastecimiento ilimitado.');
+    if (h.y.length >= 3 && h.y.length < 6) w.push('Con ' + h.y.length + ' períodos no se puede medir el error con solidez ni estimar intervalos: los escenarios usan la amplitud que tú defines.');
+    return { errors: e, warnings: w, hist: h };
+  }
+
+  /* ---------- pronósticos ---------- */
+  function maRun(y, k) {
+    var f = [], i; for (i = 0; i < y.length; i++) f.push(i >= k ? mean(y.slice(i - k, i)) : null);
+    return { fitted: f, next: mean(y.slice(-k)) };
+  }
+  function sesRun(y, a) {
+    var l = y[0], f = [null], i;
+    for (i = 1; i < y.length; i++) { f.push(l); l = a * y[i] + (1 - a) * l; }
+    return { fitted: f, level: l };
+  }
+  function seasonIdx(y, L) {
+    var n = y.length;
+    if (L < 2 || n < 2 * L) return null;
+    var cycles = Math.floor(n / L), idx = [], j, c;
+    for (j = 0; j < L; j++) idx.push([]);
+    for (c = 0; c < cycles; c++) {
+      var seg = y.slice(c * L, c * L + L), m = mean(seg);
+      if (m <= 0) continue;
+      for (j = 0; j < L; j++) idx[j].push(seg[j] / m);
+    }
+    var out = idx.map(function (a) { return a.length ? mean(a) : 1; });
+    var mm = mean(out); if (mm <= 0) return null;
+    return out.map(function (v) { return Math.max(0.05, v / mm); });
+  }
+
+  function metrics(actual, fc) {
+    var e = [], ae = 0, se = 0, sa = 0, bi = 0, cnt = 0;
+    for (var i = 0; i < actual.length; i++) {
+      if (fc[i] === null || fc[i] === undefined) continue;
+      var d = actual[i] - fc[i]; cnt++; ae += Math.abs(d); se += d * d; sa += actual[i]; bi += (fc[i] - actual[i]); e.push({ i: i, actual: actual[i], fc: fc[i], err: d });
+    }
+    if (!cnt) return { n: 0, mae: null, wape: null, bias: null, rmse: null, errs: [] };
+    return { n: cnt, mae: ae / cnt, wape: sa > 0 ? ae / sa : null, bias: sa > 0 ? bi / sa : null, rmse: Math.sqrt(se / cnt), errs: e };
+  }
+
+  function extFactor(b, h) {
+    var f = 1, list = [];
+    b.externals.forEach(function (e) {
+      if (!e.on) return;
+      var p = num(e.pct, 0) / 100, m = 1;
+      if (e.kind === 'trend') m = Math.pow(1 + p, h);
+      else if (h >= num(e.from, 1) && h <= num(e.to, 12)) m = 1 + p;
+      f *= m; list.push({ id: e.id, label: e.label, factor: m });
+    });
+    return { factor: f, list: list };
+  }
+
+  function forecastAll(b, y) {
+    var n = y.length, H = clamp(Math.round(num(b.horizon, 6)), 1, MAXH);
+    var k = clamp(Math.round(num(b.maWindow, 3)), 1, Math.max(1, n));
+    var alpha = clamp(num(b.alpha, 0.4), 0.05, 0.95);
+    var ma = maRun(y, k), ses = sesRun(y, alpha);
+    var L = Math.round(num(b.seasonLen, 4));
+    var sIdx = b.seasonAuto ? seasonIdx(y, L) : null;
+    var seasonOk = !!sIdx;
+    var level3, fitted3 = null;
+    if (seasonOk) {
+      var ds = y.map(function (v, t) { return v / sIdx[t % L]; });
+      var s3 = sesRun(ds, alpha); level3 = s3.level;
+      fitted3 = s3.fitted.map(function (v, t) { return v === null ? null : v * sIdx[t % L]; });
+    } else level3 = ses.level;
+
+    var m1 = [], m2 = [], m3 = [], extList = [];
+    for (var h = 1; h <= H; h++) {
+      m1.push(Math.max(0, ma.next)); m2.push(Math.max(0, ses.level));
+      var ef = extFactor(b, h); extList.push(ef.list);
+      var base3 = level3 * (seasonOk ? sIdx[(n + h - 1) % L] : 1);
+      m3.push(Math.max(0, base3 * ef.factor));
+    }
+    /* evaluación histórica sobre la misma ventana para todos los métodos */
+    var start = Math.max(k, 1);
+    function win(f) { return f.map(function (v, i) { return i >= start ? v : null; }); }
+    var res = {
+      m1: metrics(y, win(ma.fitted)), m2: metrics(y, win(ses.fitted)),
+      m3: seasonOk ? metrics(y, win(fitted3)) : null
+    };
+    var evalPoints = res.m1.n;
+    return { n: n, H: H, k: k, alpha: alpha, ma: ma, ses: ses, sIdx: sIdx, seasonOk: seasonOk, seasonLen: L, level3: level3,
+      paths: { m1: m1, m2: m2, m3: m3 }, extList: extList, res: res, evalPoints: evalPoints, fitted: { m1: ma.fitted, m2: ses.fitted, m3: fitted3 || ses.fitted }, start: start };
+  }
+
+  function recommend(b, F) {
+    var anyExt = b.externals.some(function (e) { return e.on; });
+    var names = { m1: 'Promedio móvil', m2: 'Suavizamiento exponencial', m3: 'Proyección ajustada' };
+    var cands = ['m1', 'm2'].concat(F.seasonOk ? ['m3'] : []);
+    var out = { id: 'm2', reason: '', enough: F.evalPoints >= 4, names: names };
+    if (F.evalPoints >= 4) {
+      var best = null;
+      cands.forEach(function (c) { var w = F.res[c].wape; if (w === null) return; if (best === null || w < F.res[best].wape - 1e-9) best = c; });
+      if (best) { out.id = best; out.reason = names[best] + ' tuvo el menor WAPE histórico (' + rnd(F.res[best].wape * 100, 1) + ' %) sobre ' + F.evalPoints + ' períodos evaluados.'; }
+      else out.reason = 'No se puede calcular WAPE porque las ventas históricas suman cero.';
+    } else {
+      out.id = 'm2';
+      out.reason = 'Hay solo ' + F.evalPoints + ' período(s) evaluable(s): la evidencia es insuficiente para comparar métodos. Se sugiere suavizamiento exponencial por defecto (reacciona a datos recientes) y se pide cautela.';
+    }
+    if (anyExt) {
+      out.id = 'm3';
+      out.reason = 'Activaste variables externas, que solo el método 3 incorpora. ' + (F.evalPoints >= 4 ? 'Esa parte es un supuesto tuyo: el historial no puede validarla. Para la parte estadística, ' + (F.res.m1.wape !== null && F.res.m2.wape !== null ? names[F.res.m1.wape <= F.res.m2.wape ? 'm1' : 'm2'] + ' fue mejor en el historial.' : 'revisa los errores históricos.') : 'Con pocos datos, trátalo como un escenario y no como una predicción.');
+    }
+    return out;
+  }
+
+  /* ---------- parámetros efectivos (negocio + decisiones + escenario) ---------- */
+  function effParams(b, ov) {
+    ov = ov || {}; var d = b.dec || {};
+    var price0 = num(b.price, 1);
+    var capRaw = d.capacity !== null && d.capacity !== undefined && d.capacity !== '' ? d.capacity : b.capacity;
+    var cap = (capRaw === null || capRaw === '' || capRaw === undefined) ? Infinity : Math.max(0, num(capRaw, 0));
+    cap *= (ov.capMult === undefined ? 1 : ov.capMult);
+    var price = (d.price !== null && d.price !== undefined && d.price !== '') ? num(d.price, price0) : price0;
+    price *= (ov.priceMult === undefined ? 1 : ov.priceMult);
+    var sl = (ov.serviceLevel !== undefined) ? ov.serviceLevel : ((d.serviceLevel !== null && d.serviceLevel !== undefined && d.serviceLevel !== '') ? num(d.serviceLevel, 95) : num(b.serviceLevel, 95));
+    var L = (d.leadTime !== null && d.leadTime !== undefined && d.leadTime !== '') ? Math.round(num(d.leadTime, 0)) : Math.round(num(b.leadTime, 0));
+    return { price0: price0, price: price, cost: num(b.cost, 0) * (ov.costMult === undefined ? 1 : ov.costMult), cap: cap, sl: clamp(sl, 50, 99.9), z: zOf(clamp(sl, 50, 99.9) / 100), L: clamp(L, 0, 12),
+      extraDelay: ov.extraDelay || 0, hold: num(b.holdCost, 0), stockout: num(b.stockoutCost, 0) };
+  }
+
+  function sigmaInfo(b, F, y, methodId, avg) {
+    var m = F.res[methodId] || F.res.m2;
+    if (F.evalPoints >= 4 && m && m.rmse !== null) return { sigma: m.rmse, source: 'backtest', label: 'error típico de pronóstico (RMSE) de ' + m.n + ' períodos' };
+    if (y.length >= 4) return { sigma: sd(y), source: 'history', label: 'desviación estándar de las ventas históricas (aproximación: no mide el error del pronóstico)' };
+    return { sigma: avg * clamp(num(b.scenarioPct, 15), 0, 100) / 100, source: 'assumed', label: 'supuesto tuyo de ' + num(b.scenarioPct, 15) + ' % de la demanda (datos insuficientes)' };
+  }
+
+  function mktBaseOf(b, y, price) { var v = b.mktBase; if (v === null || v === '' || v === undefined) return Math.max(1, 0.02 * price * mean(y)); return Math.max(0, num(v, 0)); }
+
+  function decisionMult(b, y, P) {
+    var d = b.dec || {};
+    var pe = num(b.priceElasticity, -1.2), me = num(b.mktElasticity, 0.1);
+    var priceF = Math.pow(Math.max(0.01, P.price / P.price0), pe);
+    var base = mktBaseOf(b, y, P.price0);
+    var mkt = (d.marketing !== null && d.marketing !== undefined && d.marketing !== '') ? Math.max(0, num(d.marketing, base)) : base;
+    var up = clamp(me * (mkt - base) / Math.max(base, 1), -0.3, 0.5);
+    return { priceF: priceF, mktF: 1 + up, mult: priceF * (1 + up), mkt: mkt, mktBase: base, uplift: up };
+  }
+
+  /* ---------- plan sugerido (revisión periódica, nivel objetivo) ---------- */
+  function suggestPlan(ctx) {
+    var H = ctx.D.length, L = ctx.L, D = ctx.D, T = ctx.T, A = ctx.A, cap = ctx.cap, inv = ctx.inv;
+    var R = A.slice(), N = [], s, t, a, E;
+    for (s = 1; s <= H; s++) N.push(0);
+    for (s = 1; s <= H - L; s++) {
+      a = s + L; E = inv;
+      for (t = 1; t <= a - 1; t++) E = Math.max(0, E + R[t - 1] - D[t - 1]);
+      var need = Math.max(0, D[a - 1] + T[a - 1] - E - A[a - 1]);
+      N[s - 1] = need; R[a - 1] += need;
+    }
+    var lost = 0;
+    if (isFinite(cap)) {
+      for (s = H - L; s >= 1; s--) {
+        if (N[s - 1] > cap) { var carry = N[s - 1] - cap; N[s - 1] = cap; if (s > 1) N[s - 2] += carry; else lost += carry; }
+      }
+    }
+    return { place: N, unplaceable: lost };
+  }
+
+  /* ---------- simulación de inventario (balance entradas/salidas) ---------- */
+  function simulate(ctx) {
+    var H = ctx.D.length, L = ctx.L + (ctx.extraDelay || 0), rows = [], E = ctx.inv, t;
+    var placedP = [], placedB = [], capCut = 0;
+    for (t = 1; t <= H; t++) {
+      var wp = Math.max(0, ctx.produce[t - 1] || 0), wb = Math.max(0, ctx.buy[t - 1] || 0);
+      var ap = Math.min(wp, ctx.cap), ab = Math.min(wb, Math.max(0, ctx.cap - ap));
+      if (isFinite(ctx.cap)) capCut += (wp - ap) + (wb - ab);
+      placedP.push(ap); placedB.push(ab);
+    }
+    var totalSales = 0, totalLost = 0, totalReq = 0, rev = 0, hold = 0, peakCap = 0;
+    for (t = 1; t <= H; t++) {
+      var rec = ctx.A[t - 1] || 0, from = t - L;
+      if (from >= 1) rec += placedP[from - 1] + placedB[from - 1];
+      var begin = E, avail = begin + rec, req = ctx.D[t - 1];
+      var sales = Math.min(avail, req), lost = Math.max(0, req - sales), end = avail - sales;
+      var pipe = 0, q; for (q = Math.max(1, t - L + 1); q <= t; q++) pipe += placedP[q - 1] + placedB[q - 1];
+      var placed = placedP[t - 1] + placedB[t - 1];
+      rows.push({ t: t, begin: begin, receipts: rec, avail: avail, req: req, sales: sales, lost: lost, end: end, pipe: pipe, produce: placedP[t - 1], buy: placedB[t - 1], placed: placed, util: isFinite(ctx.cap) && ctx.cap > 0 ? placed / ctx.cap : null, stockout: lost > 1e-9 });
+      totalSales += sales; totalLost += lost; totalReq += req; E = end; hold += ctx.hold * (begin + end) / 2;
+    }
+    rev = totalSales * ctx.price;
+    var cogs = totalSales * ctx.cost, gm = rev - cogs, stockCost = totalLost * ctx.stockout, lostMargin = totalLost * (ctx.price - ctx.cost);
+    var mktCost = (ctx.mkt || 0) * H, profit = gm - hold - stockCost - mktCost;
+    var placedUnits = sum(placedP) + sum(placedB), supplyCost = placedUnits * ctx.cost;
+    var cap$ = ctx.inv * ctx.cost; rows.forEach(function (r) { cap$ = Math.max(cap$, (r.end + r.pipe) * ctx.cost); });
+    var capUsed = isFinite(ctx.cap) && ctx.cap > 0 ? sum(rows.map(function (r) { return r.placed; })) / (ctx.cap * H) : null;
+    var endInv = rows.length ? rows[rows.length - 1].end : ctx.inv;
+    var lateUnits = 0; for (t = 1; t <= H; t++) if (t + L > H) lateUnits += placedP[t - 1] + placedB[t - 1];
+    return { rows: rows, totals: { req: totalReq, sales: totalSales, lost: totalLost, fill: totalReq > 0 ? totalSales / totalReq : 1, revenue: rev, cogs: cogs, gm: gm, hold: hold, stockCost: stockCost, lostMargin: lostMargin, mktCost: mktCost, profit: profit,
+      supplyCost: supplyCost, placedUnits: placedUnits, capital: cap$, capUsed: capUsed, endInv: endInv, capCut: capCut, lateUnits: lateUnits, stockoutPeriods: rows.filter(function (r) { return r.stockout; }).length,
+      cost: cogs + hold + stockCost + mktCost, marginPct: rev > 0 ? gm / rev : null } };
+  }
+
+  function arrivals(b, H, extraShift) {
+    var A = []; for (var i = 0; i < H; i++) A.push(0);
+    var q = Math.max(0, num(b.inTransitQty, 0)), at = Math.round(num(b.inTransitAt, 1)) + (extraShift || 0);
+    if (q > 0 && at >= 1 && at <= H) A[at - 1] += q;
+    return A;
+  }
+
+  /* ---------- modelo completo ---------- */
+  function build(b, ov) {
+    ov = ov || {};
+    var v = validate(b);
+    if (v.errors.length) return { ok: false, errors: v.errors, warnings: v.warnings };
+    var y = v.hist.y, F = forecastAll(b, y), rec = recommend(b, F), P = effParams(b, ov);
+    var mid = (b.method === 'auto' || !b.method) ? rec.id : b.method;
+    var H = F.H, n = y.length, base = F.paths[mid].slice();
+    var avg = mean(base), last = y[n - 1];
+    var si = sigmaInfo(b, F, y, mid === 'm3' && !F.res.m3 ? 'm2' : mid, avg);
+    var dm = decisionMult(b, y, P);
+    var dmult = ov.demandMult === undefined ? 1 : ov.demandMult;
+    var conf = []; for (var i = 0; i < H; i++) conf.push(Math.max(0, num(b.confirmed[i], 0)));
+    var proj = base.map(function (x) { return x * dm.mult * dmult; });
+    var D = proj.map(function (x, i) { return Math.max(x, conf[i]); });
+    var backlog = Math.max(0, num(b.pendingOrders, 0)); if (H > 0) D[0] += backlog;
+    var dBar = mean(proj);
+    /* intervalo / escenarios */
+    var sigmaPer = si.sigma * dm.mult * dmult;
+    var opt = [], pes = [];
+    proj.forEach(function (x, i) {
+      var w = si.source === 'assumed' ? x * clamp(num(b.scenarioPct, 15), 0, 100) / 100 : sigmaPer;
+      opt.push(x + w); pes.push(Math.max(0, x - w));
+    });
+    /* stock de seguridad y reposición */
+    var sSig = si.sigma * dm.mult * dmult, sL = num(b.leadTimeSd, 0);
+    var ss = P.z * Math.sqrt((P.L + 1) * sSig * sSig + dBar * dBar * sL * sL);
+    var Sup = dBar * (P.L + 1) + ss;
+    var dec = b.dec || {};
+    var tgt = (dec.targetInv !== null && dec.targetInv !== undefined && dec.targetInv !== '') ? Math.max(0, num(dec.targetInv, 0)) : ss;
+    var T = D.map(function () { return tgt; });
+    var A = arrivals(b, H, ov.extraDelay ? 0 : 0);
+    var inv0 = Math.max(0, num(b.inventory, 0));
+    var sugg = suggestPlan({ D: D, T: T, A: A, L: P.L, cap: P.cap, inv: inv0 });
+    var spPlace = sugg.place.slice();
+    var produceS = b.supply === 'produce' ? spPlace.slice() : spPlace.map(function () { return 0; });
+    var buyS = b.supply === 'buy' ? spPlace.slice() : spPlace.map(function () { return 0; });
+    function scaled(arr, total) {
+      if (total === null || total === undefined || total === '') return arr.slice();
+      total = Math.max(0, num(total, 0)); var s = sum(arr);
+      if (s > 0) return arr.map(function (x) { return x * total / s; });
+      var slots = Math.max(1, H - P.L), out = arr.map(function () { return 0; });
+      for (var j = 0; j < slots; j++) out[j] = total / slots; return out;
+    }
+    var produce = scaled(produceS, dec.produceTotal), buy = scaled(buyS, dec.buyTotal);
+    var mktTot = dm.mkt + (ov.mktExtra || 0);
+    var ctx = { D: D, A: A, inv: inv0, L: P.L, extraDelay: ov.extraDelay || 0, cap: P.cap, produce: produce, buy: buy, price: P.price, cost: P.cost, hold: P.hold, stockout: P.stockout, mkt: mktTot };
+    var simulated = simulate(ctx);
+    var sim = simulated, suggSim = simulate({ D: D, A: A, inv: inv0, L: P.L, extraDelay: ov.extraDelay || 0, cap: P.cap, produce: produceS, buy: buyS, price: P.price, cost: P.cost, hold: P.hold, stockout: P.stockout, mkt: mktTot });
+    function altSim(path) { var Dx = path.map(function (x, i) { return Math.max(x * dm.mult * dmult, conf[i]); }); if (H > 0) Dx[0] += backlog; return simulate(Object.assign({}, ctx, { D: Dx })); }
+    var simOpt = altSim(opt.map(function (x) { return x / (dm.mult * dmult || 1); })), simPes = altSim(pes.map(function (x) { return x / (dm.mult * dmult || 1); }));
+    var pos = inv0 + sum(A) + 0, needNow = Math.max(0, Sup - pos);
+    return { ok: true, warnings: v.warnings, y: y, n: n, F: F, rec: rec, methodId: mid, P: P, dm: dm, base: base, proj: proj, conf: conf, D: D, opt: opt, pes: pes, sigma: si, sSig: sSig, ss: ss, S: Sup, tgt: tgt, dBar: dBar, last: last,
+      simOpt: simOpt, simPes: simPes, sugg: { produce: produceS, buy: buyS, unplaceable: sugg.unplaceable, sim: suggSim }, plan: { produce: produce, buy: buy }, ctx: ctx, sim: sim, inv0: inv0, needNow: needNow, position: pos, backlog: backlog,
+      coverPeriods: dBar > 0 ? inv0 / dBar : Infinity };
+  }
+
+  /* comparación de escenario: mismo plan de decisiones, parámetros alterados */
+  function scenario(b, ov) {
+    var base = build(b), mod;
+    if (!base.ok) return null;
+    if (ov.replan) {
+      mod = build(b, ov);
+    } else {
+      /* el plan queda fijo (lo decidido antes del evento); cambia el entorno */
+      mod = build(b, ov);
+      var c = Object.assign({}, mod.ctx, { produce: base.plan.produce, buy: base.plan.buy });
+      /* capacidad modificada afecta lo que realmente se puede producir */
+      mod.sim = simulate(c); mod.plan = base.plan;
+    }
+    return { base: base, mod: mod };
+  }
+
+  /* ---------- ciclo de ajuste ---------- */
+  function actualsAnalysis(b, M) {
+    var rows = [], H = M.D.length, cum = { ae: 0, sa: 0, bi: 0, n: 0 };
+    for (var i = 0; i < H; i++) {
+      var a = b.actuals[i], r = M.sim.rows[i], fc = M.proj[i];
+      if (!a || a.real === null || a.real === undefined || a.real === '' || !isFinite(Number(a.real))) { rows.push({ t: i + 1, fc: fc, done: false, sim: r }); continue; }
+      var real = Math.max(0, Number(a.real)), stock = !!a.stockout || (a.endInv !== null && a.endInv !== undefined && a.endInv !== '' && Number(a.endInv) <= 0);
+      var err = real - fc, estLost = stock ? Math.max(0, fc - real) : 0, demandEst = stock ? Math.max(real, fc) : real;
+      cum.ae += Math.abs(err); cum.sa += real; cum.bi += (fc - real); cum.n++;
+      rows.push({ t: i + 1, fc: fc, real: real, err: err, absErr: Math.abs(err), pct: real > 0 ? err / real : null, stock: stock, estLost: estLost, demandEst: demandEst, endInv: (a.endInv === null || a.endInv === '' || a.endInv === undefined) ? null : Number(a.endInv), done: true, sim: r });
+    }
+    return { rows: rows, n: cum.n, mae: cum.n ? cum.ae / cum.n : null, wape: cum.sa > 0 ? cum.ae / cum.sa : null, bias: cum.sa > 0 ? cum.bi / cum.sa : null,
+      lostEst: sum(rows.filter(function (r) { return r.done; }).map(function (r) { return r.estLost; })), censored: rows.filter(function (r) { return r.done && r.stock; }).length };
+  }
+
+  /* avanza k períodos: incorpora ventas reales al historial y reinicia el plan */
+  function advance(b, M, k, useEstimated) {
+    var A = actualsAnalysis(b, M), nb = JSON.parse(JSON.stringify(b)), i;
+    for (i = 0; i < k; i++) {
+      var r = A.rows[i]; nb.history.push(useEstimated ? r.demandEst : r.real);
+      nb.errorLog.push({ cycle: (b.cycles || 0) + 1, t: i + 1, fc: r.fc, real: r.real, method: M.methodId });
+    }
+    if (nb.history.length > MAXN) nb.history = nb.history.slice(nb.history.length - MAXN);
+    var last = A.rows[k - 1];
+    nb.inventory = (last.endInv !== null && last.endInv !== undefined) ? last.endInv : Math.round(M.sim.rows[k - 1].end);
+    /* pedidos colocados antes del corte que llegan después pasan a "en tránsito" */
+    var Lsim = M.P.L, carry = 0, carryAt = null, t;
+    for (t = 1; t <= k; t++) { var pl = M.sim.rows[t - 1].placed; if (pl > 0 && t + Lsim > k) { carry += pl; carryAt = (carryAt === null) ? (t + Lsim - k) : Math.min(carryAt, t + Lsim - k); } }
+    var oldQ = num(b.inTransitQty, 0), oldAt = Math.round(num(b.inTransitAt, 1));
+    if (oldQ > 0 && oldAt > k) { carry += oldQ; carryAt = carryAt === null ? oldAt - k : Math.min(carryAt, oldAt - k); }
+    nb.inTransitQty = Math.round(carry); nb.inTransitAt = carryAt === null ? 1 : carryAt;
+    nb.confirmed = (b.confirmed || []).slice(k); nb.pendingOrders = 0;
+    nb.externals.forEach(function (e) { if (e.kind === 'level') { e.from = Math.max(1, num(e.from, 1) - k); e.to = num(e.to, 12) - k; if (e.to < 1) e.on = false; } });
+    nb.actuals = []; nb.cycles = (b.cycles || 0) + 1;
+    nb.dec = Object.assign({}, nb.dec, { produceTotal: null, buyTotal: null });
+    return nb;
+  }
+
+  /* ---------- alertas y recomendaciones ---------- */
+  function fmt(x, d) { if (x === null || x === undefined || !isFinite(x)) return '—'; return Number(rnd(x, d || 0)).toLocaleString('es-ES', { maximumFractionDigits: d || 0, minimumFractionDigits: d || 0 }); }
+  function pct(x, d) { return (x === null || x === undefined || !isFinite(x)) ? '—' : fmt(x * 100, d === undefined ? 1 : d) + ' %'; }
+
+  function alerts(b, M) {
+    var out = [], u = b.unit, per = PERIODS[b.period], T = M.sim.totals, rows = M.sim.rows, H = rows.length;
+    var cap = M.P.cap, dTot = sum(M.D), plannedTotal = sum(M.plan.produce) + sum(M.plan.buy);
+    var peak = 0, peakT = 1; M.D.forEach(function (x, i) { if (x > peak) { peak = x; peakT = i + 1; } });
+    if (isFinite(cap) && peak > cap) {
+      var over = M.D.filter(function (x) { return x > cap; }).length;
+      out.push({ lv: 'crit', t: 'Capacidad insuficiente', m: 'Tu capacidad es de ' + fmt(cap) + ' ' + u + ' por ' + per.l + ', pero la demanda llega a ' + fmt(peak) + ' en el ' + per.l + ' ' + peakT + '. Esto ocurre en ' + over + ' de ' + H + ' períodos. Si no anticipas producción, tu capacidad deja sin cubrir hasta ' + fmt(sum(M.D.map(function (x) { return Math.max(0, x - cap); }))) + ' ' + u + ' en el horizonte (antes de contar el inventario de ' + fmt(M.inv0) + ').' });
+    }
+    if (T.capCut > 0.5) out.push({ lv: 'crit', t: 'Plan por encima de la capacidad', m: 'Tu plan pide ' + fmt(T.capCut) + ' ' + u + ' más de lo que la capacidad permite; el simulador solo ejecuta lo posible.' });
+    if (T.lost > 0.5) {
+      var first = rows.filter(function (r) { return r.stockout; })[0];
+      out.push({ lv: 'crit', t: 'Faltantes de inventario', m: 'Con este plan no atiendes ' + fmt(T.lost) + ' ' + u + ' (' + pct(1 - T.fill) + ' de la demanda), a partir del ' + per.l + ' ' + first.t + '. Dejas de ganar ' + fmt(T.lostMargin) + ' en margen' + (M.P.stockout > 0 ? ' y pagas ' + fmt(T.stockCost) + ' adicionales por faltante.' : '.') });
+    }
+    var cover = M.sim.rows[H - 1].end;
+    var excessRef = M.ss + M.dBar;
+    if (T.endInv > excessRef * 1.25 && T.endInv - excessRef > 0.5) {
+      out.push({ lv: 'warn', t: 'Inventario excesivo', m: 'Terminarías con ' + fmt(T.endInv) + ' ' + u + ', unos ' + fmt(T.endInv - excessRef) + ' por encima de lo necesario (' + fmt(excessRef) + ': un ' + per.l + ' de demanda más el stock de seguridad). Mantenerlos cuesta ' + fmt((T.endInv - excessRef) * M.P.hold) + ' por ' + per.l + ' y amarra ' + fmt((T.endInv - excessRef) * M.P.cost) + ' de capital.' });
+    }
+    if (plannedTotal > dTot - M.inv0 - sum(arrivals(b, H)) + M.ss && plannedTotal > 0 && T.endInv > excessRef) {
+      out.push({ lv: 'warn', t: 'Compras mayores que la demanda', m: 'Planeas abastecer ' + fmt(plannedTotal) + ' ' + u + ' y la demanda proyectada es ' + fmt(dTot) + '. Con el inventario inicial de ' + fmt(M.inv0) + ' y lo que ya viene en camino, podrías terminar con inventario excesivo.' });
+    }
+    var belowSS = rows.filter(function (r) { return r.end < M.ss * 0.999 && !r.stockout; });
+    if (belowSS.length && T.lost < 0.5) out.push({ lv: 'warn', t: 'Por debajo del stock de seguridad', m: 'En ' + belowSS.length + ' período(s) el inventario final queda por debajo del stock de seguridad (' + fmt(M.ss) + ' ' + u + '). No hay faltante, pero el riesgo es alto si la demanda sube.' });
+    if (T.lateUnits > 0.5) out.push({ lv: 'info', t: 'Pedidos que llegan después del horizonte', m: fmt(T.lateUnits) + ' ' + u + ' de lo que decides ahora llegarán después del ' + per.l + ' ' + H + ' (lead time de ' + M.P.L + '). No ayudan a este horizonte; sí cuentan como capital invertido.' });
+    if (M.P.L > 0) out.push({ lv: 'info', t: 'Ventana ciega por lead time', m: 'Durante los primeros ' + Math.min(M.P.L, H) + ' ' + (M.P.L === 1 ? per.l : per.pl) + ' solo cuentas con el inventario actual (' + fmt(M.inv0) + ') y lo que ya está en camino: lo que pidas hoy no llega antes.' });
+    if (M.dm.mult !== 1) out.push({ lv: 'info', t: 'Efecto de tus decisiones en la demanda', m: 'Precio y marketing cambian la demanda esperada en ' + pct(M.dm.mult - 1) + ' (precio: ' + pct(M.dm.priceF - 1) + ', marketing: ' + pct(M.dm.mktF - 1) + '). Es un supuesto basado en las elasticidades que configuraste.' });
+    var conflict = M.conf.filter(function (c, i) { return c > M.proj[i] + 1e-9; }).length;
+    if (conflict) out.push({ lv: 'info', t: 'Pedidos confirmados superan el pronóstico', m: 'En ' + conflict + ' período(s) los pedidos confirmados son mayores que la demanda pronosticada; se usa el pedido confirmado. No se suman: ya forman parte de la demanda.' });
+    var ord = { crit: 0, warn: 1, info: 2 };
+    out.sort(function (a, c) { return ord[a.lv] - ord[c.lv]; });
+    if (!out.length) out.push({ lv: 'ok', t: 'Plan consistente', m: 'Con tus decisiones atiendes ' + pct(T.fill) + ' de la demanda proyectada y el inventario final (' + fmt(T.endInv) + ' ' + u + ') es razonable.' });
+    return out;
+  }
+
+  function insights(b, M) {
+    var out = [], u = b.unit, per = PERIODS[b.period], T = M.sim.totals, y = M.y, n = y.length, H = M.D.length;
+    var half = Math.floor(n / 2), g = null;
+    if (n >= 4) { var a1 = mean(y.slice(0, half)), a2 = mean(y.slice(n - half)); if (a1 > 0) g = a2 / a1 - 1; }
+    var peak = Math.max.apply(null, M.D), cap = M.P.cap;
+    var capNote = '';
+    if (isFinite(cap) && peak > cap * 1.0001) out.push({ p: 1, t: 'La demanda supera tu capacidad', m: 'La demanda proyectada llega a ' + fmt(peak) + ' ' + u + ' y tu capacidad es ' + fmt(cap) + ' por ' + per.l + '. ' + (g !== null && g > 0.05 ? 'Además tu demanda viene creciendo ' + pct(g, 0) + '. ' : '') + 'Considera anticipar producción en períodos con holgura, subir la capacidad (turnos, personal, un segundo proveedor) o priorizar los productos de mayor margen.' });
+    else if (isFinite(cap) && M.dBar / cap > 0.85) out.push({ p: 2, t: 'Poca holgura de capacidad', m: 'Usarías en promedio ' + pct(M.dBar / cap, 0) + ' de tu capacidad. Una promoción o un pico de demanda te dejaría sin margen de maniobra.' });
+    if (isFinite(M.coverPeriods)) {
+      if (M.coverPeriods < 1) out.push({ p: 1, t: 'Inventario muy ajustado', m: 'Tu inventario actual cubre ' + fmt(M.coverPeriods, 1) + ' ' + per.pl + ' de demanda bajo el escenario base. Con un lead time de ' + M.P.L + ', conviene decidir la reposición ahora.' });
+      else if (M.coverPeriods > 4) out.push({ p: 2, t: 'Inventario abundante', m: 'Tu inventario actual cubre unos ' + fmt(M.coverPeriods, 1) + ' ' + per.pl + ' de demanda. Pedir más ahora solo aumentaría el costo de almacenamiento (' + fmt(M.inv0 * M.P.hold) + ' por ' + per.l + ').' });
+      else out.push({ p: 3, t: 'Cobertura de inventario', m: 'Tu inventario cubre aproximadamente ' + fmt(M.coverPeriods, 1) + ' ' + per.pl + ' de demanda bajo el escenario base, frente a un lead time de ' + M.P.L + '.' });
+    }
+    var promoOn = b.externals.some(function (e) { return e.on && (e.id === 'promo' || e.id === 'fest'); });
+    if (promoOn) out.push({ p: 1, t: 'Promoción: vende más, pero exige abastecimiento', m: 'Una promoción puede elevar las ventas, pero también generar faltantes si no aumentas el abastecimiento a tiempo' + (T.lost > 0.5 ? ' (en tu plan actual ya faltan ' + fmt(T.lost) + ' ' + u + ')' : '') + '. Con descuento, además, cada unidad deja menos margen.' });
+    if (M.F.res[M.methodId] && M.F.res[M.methodId].bias !== null && M.F.evalPoints >= 4) {
+      var bi = M.F.res[M.methodId].bias;
+      if (Math.abs(bi) > 0.05) out.push({ p: 2, t: bi > 0 ? 'El pronóstico tiende a sobreestimar' : 'El pronóstico tiende a subestimar', m: 'En el historial, el método elegido se desvió en promedio ' + pct(Math.abs(bi)) + ' ' + (bi > 0 ? 'por encima' : 'por debajo') + ' de lo vendido. ' + (g !== null && Math.abs(g) > 0.1 ? 'Es típico cuando la demanda tiene tendencia (' + (g > 0 ? 'creciente' : 'decreciente') + '): los promedios van rezagados. Prueba un alfa mayor o la proyección ajustada.' : 'Revisa la ventana o el alfa, o si hubo eventos atípicos.') });
+    } else if (g !== null && Math.abs(g) > 0.1) out.push({ p: 2, t: g > 0 ? 'Demanda en crecimiento' : 'Demanda en caída', m: 'La venta media de la segunda mitad del historial es ' + pct(Math.abs(g), 0) + (g > 0 ? ' mayor' : ' menor') + ' que la de la primera. Los promedios simples van rezagados ante tendencias: considera la variable "Tendencias del mercado".' });
+    if (T.marginPct !== null && T.profit < 0) out.push({ p: 1, t: 'Resultado negativo', m: 'Con estas decisiones la utilidad estimada del horizonte es ' + fmt(T.profit) + '. Revisa precio, costo unitario y gasto de marketing o almacenamiento antes de ejecutar.' });
+    else if (T.marginPct !== null && T.marginPct < 0.15) out.push({ p: 2, t: 'Margen bajo', m: 'El margen bruto es ' + pct(T.marginPct) + '. Un descuento o un aumento de costos podría llevarlo a cero.' });
+    if (M.sigma.source !== 'backtest') out.push({ p: 2, t: 'Evidencia limitada', m: 'Solo hay ' + n + ' períodos de historia (' + M.F.evalPoints + ' evaluables). El intervalo y el stock de seguridad usan ' + M.sigma.label + '. Agrega más períodos para que los cálculos ganen respaldo.' });
+    if (T.lost < 0.5 && T.endInv > M.ss + M.dBar && n >= 3) out.push({ p: 3, t: 'Sobra abastecimiento', m: 'Atiendes toda la demanda proyectada y terminas con ' + fmt(T.endInv) + ' ' + u + '. Podrías reducir compras o producción sin perder ventas.' });
+    if (M.P.L >= 2 || num(b.leadTimeSd, 0) > 0) out.push({ p: 3, t: 'Riesgo de proveedor', m: 'Si el proveedor se retrasa un ' + per.l + ' extra, ' + (function () { var s = scenario(b, { extraDelay: 1 }); return s ? 'las ventas perdidas pasarían de ' + fmt(s.base.sim.totals.lost) + ' a ' + fmt(s.mod.sim.totals.lost) + ' ' + u + '.' : 'tu servicio bajaría.'; })() });
+    out.sort(function (a, c) { return a.p - c.p; });
+    var fb = [{ p: 9, t: 'Demanda estable', m: 'No se detectan tensiones fuertes: demanda proyectada media de ' + fmt(M.dBar) + ' ' + u + ' por ' + per.l + ' y cumplimiento de ' + pct(T.fill) + '.' },
+      { p: 9, t: 'Seguimiento', m: 'Registra las ventas reales en la etapa Ajuste para medir el error del pronóstico y corregirlo en el próximo ciclo.' },
+      { p: 9, t: 'Costo de almacenar', m: 'Cada ' + u.replace(/s$/, '') + ' en bodega cuesta ' + fmt(M.P.hold, 2) + ' por ' + per.l + ' y amarra ' + fmt(M.P.cost, 2) + ' de capital.' }];
+    for (var i = 0; out.length < 3 && i < fb.length; i++) out.push(fb[i]);
+    return out.slice(0, 5);
+  }
+
+  function explainForecast(b, M) {
+    var per = PERIODS[b.period], u = b.unit, last = M.y[M.n - 1], d1 = M.proj[0];
+    var ch = last > 0 ? d1 / last - 1 : null;
+    var s = 'Con base en tus ' + M.n + ' períodos de ventas históricas' + (b.externals.some(function (e) { return e.on; }) ? ' y las condiciones externas seleccionadas' : '') + ', el método «' + M.rec.names[M.methodId] + '» proyecta una demanda de ' + fmt(d1) + ' ' + u + ' para el próximo ' + per.l + '.';
+    if (ch !== null) s += ' Esa cifra representa ' + (ch >= 0 ? 'un aumento' : 'una disminución') + ' del ' + fmt(Math.abs(ch) * 100, 1) + ' % respecto al último período observado (' + fmt(last) + ').';
+    if (M.sigma.source !== 'assumed') s += ' Un rango orientativo para ese período va de ' + fmt(M.pes[0]) + ' a ' + fmt(M.opt[0]) + ' ' + u + '.';
+    else s += ' Con tan pocos datos, el rango (' + fmt(M.pes[0]) + ' a ' + fmt(M.opt[0]) + ') refleja un supuesto tuyo, no una medición.';
+    return s;
+  }
+
+  return { MAXH: MAXH, MAXN: MAXN, PERIODS: PERIODS, EXT_DEFS: EXT_DEFS, num: num, clamp: clamp, sum: sum, mean: mean, sd: sd, rnd: rnd, zOf: zOf, fmt: fmt, pct: pct,
+    newBiz: newBiz, defaultExternals: defaultExternals, cleanHistory: cleanHistory, validate: validate, forecastAll: forecastAll, recommend: recommend,
+    build: build, scenario: scenario, simulate: simulate, actualsAnalysis: actualsAnalysis, advance: advance, alerts: alerts, insights: insights, explainForecast: explainForecast, seasonIdx: seasonIdx, metrics: metrics, effParams: effParams };
+})();
+if (typeof module !== 'undefined') module.exports = DL;
+
+/* ===== Negocios de ejemplo (datos FICTICIOS, generados con una semilla fija) ===== */
+var DLSamples = (function () {
+  'use strict';
+  function rng(seed) { var s = seed >>> 0; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+  function series(n, base, o) {
+    o = o || {}; var r = rng(o.seed || 7), out = [];
+    for (var t = 0; t < n; t++) {
+      var tr = Math.pow(1 + (o.trend || 0), t), se = o.pattern ? o.pattern[t % o.pattern.length] : 1;
+      var no = 1 + ((r() + r() + r()) / 3 - 0.5) * 2 * (o.noise === undefined ? 0.06 : o.noise);
+      out.push(Math.max(0, Math.round(base * tr * se * no)));
+    }
+    return out;
+  }
+  function mk(o) {
+    var b = DL.newBiz(); for (var k in o) b[k] = o[k];
+    b.simulated = true; b.externals = DL.defaultExternals(); b.dec = { produceTotal: null, buyTotal: null, marketing: null, price: null, targetInv: null, capacity: null, serviceLevel: null, leadTime: null };
+    return b;
+  }
+  function list() {
+    return [
+      mk({ id: 'panaderia', icon: 'pan', name: 'Panadería El Horno Dorado', product: 'Pan francés', unit: 'panes', period: 'diario',
+        desc: 'Vende pan todos los días. Los fines de semana se vende más y lo que no se vende pierde valor rápido.',
+        price: 0.6, cost: 0.26, inventory: 60, capacity: 650, supply: 'produce', leadTime: 0, leadTimeSd: 0, serviceLevel: 90, holdCost: 0.08, stockoutCost: 0.05,
+        history: series(21, 430, { seed: 11, noise: 0.07, pattern: [0.88, 0.84, 0.9, 0.96, 1.1, 1.32, 1.12] }), horizon: 7, maWindow: 7, alpha: 0.35, seasonAuto: true, seasonLen: 7, scenarioPct: 15, mktBase: 12 }),
+      mk({ id: 'pizzeria', icon: 'pizza', name: 'Pizzería Il Fornaio', product: 'Pizzas', unit: 'pizzas', period: 'semanal',
+        desc: 'Negocio en crecimiento. Tiene un pedido confirmado de catering para la semana 2.',
+        price: 9.5, cost: 3.9, inventory: 70, capacity: 470, supply: 'produce', leadTime: 0, serviceLevel: 90, holdCost: 0.15, stockoutCost: 1,
+        history: series(18, 300, { seed: 23, noise: 0.05, trend: 0.012 }), confirmed: [0, 60, 0, 0, 0, 0], horizon: 6, maWindow: 3, alpha: 0.5, scenarioPct: 12, mktBase: 120 }),
+      mk({ id: 'super', icon: 'super', name: 'Supermercado Central', product: 'Aceite de girasol 1 L', unit: 'botellas', period: 'semanal',
+        desc: 'Producto de consumo estable, comprado a un proveedor con tiempo de entrega de 2 semanas y algo de variabilidad.',
+        price: 2.9, cost: 2.1, inventory: 900, capacity: 1100, supply: 'buy', leadTime: 2, leadTimeSd: 0.5, serviceLevel: 97, holdCost: 0.02, stockoutCost: 0.4, inTransitQty: 600, inTransitAt: 1,
+        history: series(16, 520, { seed: 5, noise: 0.06 }), horizon: 8, maWindow: 4, alpha: 0.3, scenarioPct: 10, mktBase: 60 }),
+      mk({ id: 'ropa', icon: 'ropa', name: 'Moda Andina', product: 'Chaquetas', unit: 'chaquetas', period: 'mensual',
+        desc: 'Demanda estacional: picos a mitad de año y en diciembre. Compra a un taller con 2 meses de entrega.',
+        price: 48, cost: 22, inventory: 250, capacity: 420, supply: 'buy', leadTime: 2, leadTimeSd: 0.3, serviceLevel: 90, holdCost: 0.9, stockoutCost: 6,
+        history: series(24, 140, { seed: 31, noise: 0.07, trend: 0.004, pattern: [0.8, 0.75, 0.85, 0.95, 1.2, 1.4, 1.35, 1.0, 0.9, 0.95, 1.15, 1.7] }), horizon: 12, maWindow: 3, alpha: 0.3, seasonAuto: true, seasonLen: 12, scenarioPct: 15, mktBase: 400 }),
+      mk({ id: 'bebidas', icon: 'bebida', name: 'Bebidas Tropicales S. A.', product: 'Jugo de 500 ml (caja x12)', unit: 'cajas', period: 'semanal',
+        desc: 'Fábrica que abastece supermercados. Tiene pedidos confirmados de cadenas y una capacidad de planta ajustada.',
+        price: 6.6, cost: 3.9, inventory: 8200, capacity: 11500, supply: 'produce', leadTime: 1, leadTimeSd: 0, serviceLevel: 92, holdCost: 0.05, stockoutCost: 1.2, inTransitQty: 3500, inTransitAt: 1,
+        history: series(20, 8800, { seed: 41, noise: 0.05, trend: 0.007, pattern: [1, 1, 1.02, 1.05, 1.1, 1.12, 1.08, 1.0] }), confirmed: [9800, 10200, 10400, 0, 0, 0], horizon: 8, maWindow: 4, alpha: 0.4, scenarioPct: 10, mktBase: 900 })
+    ];
+  }
+  return { list: list, series: series, mk: mk };
+})();
+if (typeof module !== 'undefined') module.exports = DLSamples;
+
+/* ===== Gráficos SVG propios (líneas, barras, áreas, bandas) con hover y vista de tabla ===== */
+var Charts = (function () {
+  'use strict';
+  var registry = [];
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function nice(min, max, n) {
+    if (!(max > min)) { max = min + 1; }
+    var span = max - min, step = Math.pow(10, Math.floor(Math.log10(span / n))), err = span / n / step;
+    step *= err >= 7.5 ? 10 : err >= 3.5 ? 5 : err >= 1.5 ? 2 : 1;
+    var lo = Math.floor(min / step) * step, hi = Math.ceil(max / step) * step, t = [];
+    for (var v = lo; v <= hi + step / 2; v += step) t.push(Math.round(v / step) * step);
+    return { lo: lo, hi: hi, ticks: t, step: step };
+  }
+  function compact(v) { var a = Math.abs(v); if (a >= 1e6) return DL.fmt(v / 1e6, a >= 1e7 ? 0 : 1) + ' M'; if (a >= 1e4) return DL.fmt(v / 1e3, 0) + ' k'; return DL.fmt(v, a < 10 && v % 1 ? 1 : 0); }
+  function topBar(x, y, w, h, r) {
+    if (h <= 0) return '';
+    r = Math.min(r, w / 2, h);
+    return 'M' + x + ',' + (y + h) + 'V' + (y + r) + 'Q' + x + ',' + y + ' ' + (x + r) + ',' + y + 'H' + (x + w - r) + 'Q' + (x + w) + ',' + y + ' ' + (x + w) + ',' + (y + r) + 'V' + (y + h) + 'Z';
+  }
+
+  function draw(c) {
+    var cfg = c.cfg, el = c.svgBox, W = Math.max(280, el.clientWidth || 640), H = cfg.h || 320;
+    var narrow = W < 520, ml = narrow ? 44 : 56, mr = (cfg.direct !== false && !narrow) ? 92 : 16, mt = 12, mb = 32;
+    var pw = W - ml - mr, ph = H - mt - mb, N = cfg.cats.length;
+    var vis = cfg.series.filter(function (s) { return !s.hidden; });
+    var lo = cfg.yMin !== undefined ? cfg.yMin : 0, hi = -Infinity, i, s;
+    vis.forEach(function (s) { s.data.forEach(function (v) { if (v !== null && v !== undefined && isFinite(v)) { hi = Math.max(hi, v); if (cfg.yMin === undefined) lo = Math.min(lo, v); } }); });
+    (cfg.bands || []).forEach(function (b) { b.hi.forEach(function (v) { if (v !== null && isFinite(v)) hi = Math.max(hi, v); }); });
+    if (!isFinite(hi)) hi = 1;
+    var sc = nice(lo, hi * 1.04, narrow ? 4 : 5);
+    var yS = function (v) { return mt + ph - (v - sc.lo) / (sc.hi - sc.lo) * ph; };
+    var bw = pw / N, xC = function (i) { return ml + (i + .5) * bw; };
+    var nbar = vis.filter(function (s) { return s.type === 'bar'; }).length, g = '';
+    var yf = cfg.yFmt || compact;
+    sc.ticks.forEach(function (t) { var y = yS(t); g += '<line x1="' + ml + '" x2="' + (W - mr) + '" y1="' + y + '" y2="' + y + '" style="stroke:var(--grid)" stroke-width="1"/><text x="' + (ml - 8) + '" y="' + (y + 4) + '" text-anchor="end">' + esc(yf(t)) + '</text>'; });
+    var step = Math.max(1, Math.ceil(N / Math.max(2, Math.floor(pw / 52))));
+    for (i = 0; i < N; i += step) g += '<text x="' + xC(i) + '" y="' + (H - 10) + '" text-anchor="middle">' + esc(cfg.cats[i]) + '</text>';
+    if (cfg.split !== undefined) { var xs = ml + cfg.split * bw; g += '<line x1="' + xs + '" x2="' + xs + '" y1="' + mt + '" y2="' + (mt + ph) + '" style="stroke:var(--line2)" stroke-dasharray="4 4"/><text x="' + (xs + 6) + '" y="' + (mt + 12) + '" style="fill:var(--ink2)" font-weight="600">' + esc(cfg.splitLabel || '') + '</text>'; }
+    (cfg.bands || []).forEach(function (b) {
+      var up = [], dn = [];
+      for (i = 0; i < N; i++) if (b.hi[i] !== null && b.hi[i] !== undefined && b.lo[i] !== null && b.lo[i] !== undefined) { up.push(xC(i) + ',' + yS(b.hi[i])); dn.unshift(xC(i) + ',' + yS(b.lo[i])); }
+      if (up.length > 1) g += '<polygon points="' + up.concat(dn).join(' ') + '" style="fill:' + b.color + '" opacity="' + (b.opacity || .14) + '"/>';
+    });
+    var bi = 0, labels = [];
+    vis.forEach(function (s) {
+      if (s.type === 'bar') {
+        var gw = Math.min(bw * .74, 46 * Math.max(1, nbar)), w = Math.max(3, gw / nbar - 2), x0 = xC(0) - 0 + 0;
+        s.data.forEach(function (v, i) { if (v === null || v === undefined || !isFinite(v)) return; var x = xC(i) - gw / 2 + bi * (gw / nbar) + 1, y = yS(Math.max(v, 0)), h0 = yS(Math.max(sc.lo, 0)) - y; g += '<path d="' + topBar(x, y, w, h0, 4) + '" style="fill:' + s.color + ';stroke:var(--surface)" stroke-width="1.5"' + (s.opacity ? ' opacity="' + s.opacity + '"' : '') + '/>'; });
+        bi++; return;
+      }
+      var pts = [], seg = [], runs = [];
+      s.data.forEach(function (v, i) { if (v === null || v === undefined || !isFinite(v)) { if (seg.length) runs.push(seg); seg = []; } else seg.push([xC(i), yS(v)]); });
+      if (seg.length) runs.push(seg);
+      runs.forEach(function (r) {
+        var d = r.map(function (p, j) { return (j ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join('');
+        if (s.type === 'area' && r.length > 1) g += '<path d="' + d + 'L' + r[r.length - 1][0] + ',' + yS(Math.max(sc.lo, 0)) + 'L' + r[0][0] + ',' + yS(Math.max(sc.lo, 0)) + 'Z" style="fill:' + s.color + '" opacity=".16"/>';
+        g += '<path d="' + d + '" fill="none" style="stroke:' + s.color + '" stroke-width="' + (s.w || 2.5) + '" stroke-linejoin="round" stroke-linecap="round"' + (s.dash ? ' stroke-dasharray="' + s.dash + '"' : '') + '/>';
+        if (r.length <= 30 && s.dots !== false) r.forEach(function (p) { g += '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="3.2" style="fill:' + s.color + ';stroke:var(--surface)" stroke-width="1.5"/>'; });
+        s._end = r[r.length - 1];
+      });
+      if (s._end) labels.push({ y: s._end[1], x: s._end[0], s: s });
+    });
+    if (cfg.direct !== false && !narrow && vis.length <= 5) {
+      labels.sort(function (a, b) { return a.y - b.y; });
+      for (i = 1; i < labels.length; i++) if (labels[i].y - labels[i - 1].y < 13) labels[i].y = labels[i - 1].y + 13;
+      labels.forEach(function (l) { g += '<text class="dl" x="' + (W - mr + 8) + '" y="' + (l.y + 4) + '" style="fill:var(--ink)"><tspan style="fill:' + l.s.color + '">●</tspan> ' + esc((l.s.short || l.s.name).slice(0, 14)) + '</text>'; });
+    }
+    g += '<line class="cx" x1="0" x2="0" y1="' + mt + '" y2="' + (mt + ph) + '" style="stroke:var(--ink2)" stroke-width="1" opacity="0"/><rect class="hit" x="' + ml + '" y="' + mt + '" width="' + pw + '" height="' + ph + '" fill="transparent"/>';
+    el.innerHTML = '<svg class="ax" viewBox="0 0 ' + W + ' ' + H + '" height="' + H + '" role="img" aria-label="' + esc(cfg.title || 'Gráfico') + '">' + g + '</svg>';
+    var svg = el.firstChild, hit = svg.querySelector('.hit'), cx = svg.querySelector('.cx'), tip = c.tip;
+    function show(ev) {
+      var r = svg.getBoundingClientRect(), px = ((ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left) * (W / r.width);
+      var i = Math.min(N - 1, Math.max(0, Math.floor((px - ml) / bw)));
+      cx.setAttribute('x1', xC(i)); cx.setAttribute('x2', xC(i)); cx.setAttribute('opacity', '.6');
+      var rows = '';
+      vis.forEach(function (s) { var v = s.data[i]; if (v === null || v === undefined || !isFinite(v)) return; rows += '<div><span><i style="background:' + s.color + '"></i>' + esc(s.name) + '</span><b>' + esc((s.fmt || DL.fmt)(v)) + '</b></div>'; });
+      (cfg.bands || []).forEach(function (b) { if (b.name && b.lo[i] !== null && b.lo[i] !== undefined) rows += '<div><span><i style="background:' + b.color + ';opacity:.4"></i>' + esc(b.name) + '</span><b>' + DL.fmt(b.lo[i]) + ' – ' + DL.fmt(b.hi[i]) + '</b></div>'; });
+      tip.innerHTML = '<b>' + esc(cfg.cats[i]) + '</b>' + rows; tip.style.display = 'block';
+      var tw = tip.offsetWidth, left = xC(i) * (r.width / W) + 14; if (left + tw > r.width) left = xC(i) * (r.width / W) - tw - 14;
+      tip.style.left = Math.max(0, left) + 'px'; tip.style.top = '24px';
+    }
+    function hide() { cx.setAttribute('opacity', '0'); tip.style.display = 'none'; }
+    hit.addEventListener('mousemove', show); hit.addEventListener('mouseleave', hide); hit.addEventListener('touchstart', show, { passive: true }); hit.addEventListener('touchmove', show, { passive: true }); hit.addEventListener('touchend', hide);
+  }
+
+  function table(cfg) {
+    var h = '<div class="tw"><table><thead><tr><th>' + esc(cfg.catTitle || 'Período') + '</th>';
+    cfg.series.forEach(function (s) { h += '<th>' + esc(s.name) + '</th>'; });
+    h += '</tr></thead><tbody>';
+    cfg.cats.forEach(function (c, i) { h += '<tr><td>' + esc(c) + '</td>'; cfg.series.forEach(function (s) { var v = s.data[i]; h += '<td>' + (v === null || v === undefined || !isFinite(v) ? '—' : esc((s.fmt || DL.fmt)(v))) + '</td>'; }); h += '</tr>'; });
+    return h + '</tbody></table></div>';
+  }
+
+  function make(root, cfg) {
+    var legend = '';
+    var vis = cfg.series.filter(function (s) { return !s.hidden; });
+    if (vis.length >= 2 || (cfg.bands && cfg.bands.length)) {
+      vis.forEach(function (s) { legend += '<span>' + (s.type === 'bar' ? '<i class="bar" style="background:' + s.color + '"></i>' : '<i style="border-color:' + s.color + (s.dash ? ';border-top-style:dashed' : '') + '"></i>') + esc(s.name) + '</span>'; });
+      (cfg.bands || []).forEach(function (b) { if (b.name) legend += '<span><i class="bar" style="background:' + b.color + ';opacity:.35"></i>' + esc(b.name) + '</span>'; });
+    }
+    root.innerHTML = '<div class="chart">' + (legend ? '<div class="legend">' + legend + '</div>' : '') + '<div class="sb"></div><div class="tip"></div><div class="tb" hidden></div>' + (cfg.noTable ? '' : '<div style="margin-top:6px"><button class="btn ghost sm tbl-toggle" type="button" aria-expanded="false">Ver como tabla</button></div>') + '</div>';
+    var c = { cfg: cfg, svgBox: root.querySelector('.sb'), tip: root.querySelector('.tip'), root: root };
+    var tg = root.querySelector('.tbl-toggle'), tb = root.querySelector('.tb');
+    if (tg) tg.addEventListener('click', function () { var on = tb.hidden; if (on) tb.innerHTML = table(cfg); tb.hidden = !on; c.svgBox.hidden = on; tg.setAttribute('aria-expanded', String(on)); tg.textContent = on ? 'Ver gráfico' : 'Ver como tabla'; if (!on) draw(c); });
+    registry = registry.filter(function (r) { return document.body.contains(r.root); });
+    registry.push(c); draw(c);
+  }
+  var tmr; window.addEventListener('resize', function () { clearTimeout(tmr); tmr = setTimeout(function () { registry = registry.filter(function (r) { return document.body.contains(r.root); }); registry.forEach(function (c) { if (!c.svgBox.hidden) draw(c); }); }, 120); });
+
+  /* versión estática para el reporte imprimible (colores literales) */
+  function staticSVG(cfg, W, H) {
+    var box = { clientWidth: W, innerHTML: '', firstChild: null };
+    var holder = document.createElement('div'); holder.style.width = W + 'px'; holder.style.position = 'absolute'; holder.style.left = '-9999px'; document.body.appendChild(holder);
+    var sb = document.createElement('div'); sb.style.width = W + 'px'; holder.appendChild(sb);
+    var tip = document.createElement('div'); holder.appendChild(tip);
+    var c = { cfg: Object.assign({}, cfg, { h: H }), svgBox: sb, tip: tip, root: holder };
+    draw(c); var out = sb.innerHTML; document.body.removeChild(holder); return out;
+  }
+  return { make: make, staticSVG: staticSVG, compact: compact };
+})();
+
+/* ===== DemandLab · núcleo de la aplicación y etapa 1 (Datos) ===== */
+var S = { biz: null, store: {}, view: 'datos', edu: false, started: false, wi: null, notes: {}, adjUseEst: true };
+var V = {};
+var $ = function (s, r) { return (r || document).querySelector(s); };
+var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+var esc = function (s) { return String(s === null || s === undefined ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+var f0 = function (x) { return DL.fmt(x, 0); }, f1 = function (x) { return DL.fmt(x, 1); }, f2 = function (x) { return DL.fmt(x, 2); }, pc = function (x, d) { return DL.pct(x, d); };
+function cur() { return (S.biz && S.biz.currency) || '$'; }
+function money(x, d) { if (x === null || x === undefined || !isFinite(x)) return '—'; var a = Math.abs(x), dd = d !== undefined ? d : (a < 100 ? 2 : 0); return (x < 0 ? '−' : '') + cur() + DL.fmt(a, dd); }
+function per() { return DL.PERIODS[S.biz.period]; }
+function plabel(i, short) { var p = S.biz.period; return (p === 'diario' ? 'Día ' : p === 'semanal' ? (short ? 'S' : 'Sem. ') : (short ? 'M' : 'Mes ')) + i; }
+
+/* ---------- persistencia local (con respaldo si el navegador la bloquea) ---------- */
+var KEY = 'demandlab.v1';
+function save() { try { localStorage.setItem(KEY, JSON.stringify({ store: S.store, sel: S.biz && S.biz.id, view: S.view, edu: S.edu, started: S.started, notes: S.notes })); } catch (e) { } }
+function load() { try { var r = JSON.parse(localStorage.getItem(KEY) || 'null'); return r; } catch (e) { return null; } }
+function toast(msg, ms) { var t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = msg; document.body.appendChild(t); setTimeout(function () { t.remove(); }, ms || 3200); }
+
+/* ---------- modelo en caché ---------- */
+var _mk = null, _M = null;
+function getM() { var k = JSON.stringify(S.biz); if (k !== _mk) { _mk = k; try { _M = DL.build(S.biz); } catch (e) { console.error(e); _M = { ok: false, errors: ['Error interno de cálculo: ' + e.message], warnings: [] }; } } return _M; }
+
+/* ---------- utilidades de formulario ---------- */
+function getPath(o, p) { return p.split('.').reduce(function (a, k) { return a === null || a === undefined ? a : a[k]; }, o); }
+function setPath(o, p, v) { var ks = p.split('.'), last = ks.pop(), t = ks.reduce(function (a, k) { return a[k]; }, o); t[last] = v; }
+function nval(v) { if (v === '' || v === null || v === undefined) return null; var n = Number(String(v).replace(',', '.')); return isFinite(n) ? n : null; }
+function fv(v) { return v === null || v === undefined ? '' : String(v); }
+function fld(label, key, o) {
+  o = o || {}; var v = getPath(S.biz, key), id = 'f-' + key.replace(/\./g, '-');
+  var h = '<div class="fld"><label for="' + id + '">' + label + '</label>';
+  if (o.sel) h += '<select id="' + id + '" data-k="' + key + '" data-t="s">' + o.sel.map(function (x) { return '<option value="' + x[0] + '"' + (String(v) === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select>';
+  else if (o.text) h += '<input type="text" id="' + id + '" data-k="' + key + '" data-t="s" value="' + esc(fv(v)) + '"' + (o.ph ? ' placeholder="' + esc(o.ph) + '"' : '') + '>';
+  else h += '<input type="number" inputmode="decimal" id="' + id + '" data-k="' + key + '" data-t="n" step="' + (o.step || 'any') + '"' + (o.min !== undefined ? ' min="' + o.min + '"' : '') + (o.max !== undefined ? ' max="' + o.max + '"' : '') + ' value="' + esc(fv(v)) + '"' + (o.ph ? ' placeholder="' + esc(o.ph) + '"' : '') + '>';
+  if (o.hint) h += '<span class="hint">' + o.hint + '</span>';
+  return h + '</div>';
+}
+function eduBox(title, html) { return '<div class="edu"><h4>' + title + '</h4>' + html + '</div>'; }
+function stageHead(num, kicker, title, text, right) {
+  return '<div class="stagehead"><div><div class="kicker">' + (num ? 'Etapa ' + num + ' · ' : '') + kicker + '</div><h2>' + title + '</h2><p>' + text + '</p></div>' + (right || '') + '</div>';
+}
+function noData(M) {
+  return '<div class="card"><h3>Faltan datos para calcular</h3><p class="sub">Corrige lo siguiente en la etapa Datos:</p><ul class="clean err-list">' + M.errors.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul><div class="row" style="margin-top:14px"><button class="btn primary" data-act="go" data-v="datos">Ir a Datos</button></div></div>';
+}
+function kpi(k, v, unit, d, cls) { return '<div class="kpi ' + (cls || '') + '"><span class="k">' + k + '</span><span class="v">' + v + (unit ? '<small>' + unit + '</small>' : '') + '</span>' + (d ? '<span class="d">' + d + '</span>' : '') + '</div>'; }
+function alertsHTML(list) { var ic = { crit: '!', warn: '!', info: 'i', ok: '✓' }; return '<div class="alerts">' + list.map(function (a) { return '<div class="alert ' + a.lv + '"><span class="ic" aria-hidden="true">' + ic[a.lv] + '</span><div><b>' + esc(a.t) + '</b><p>' + esc(a.m) + '</p></div></div>'; }).join('') + '</div>'; }
+
+/* ---------- navegación ---------- */
+var STAGES = [['datos', 'Datos', 'Conocer el negocio'], ['pronostico', 'Pronóstico', '¿Cuánto vamos a vender?'], ['alineacion', 'Alineación', '¿Qué debemos hacer?'], ['ejecucion', 'Ejecución', 'Tomar decisiones'], ['ajuste', 'Ajuste', 'Aprender y replantear']];
+var TOOLS = [['dashboard', 'Dashboard', 'Indicadores clave', '▦'], ['whatif', 'WHAT IF?', 'Laboratorio de decisiones', '⇄'], ['asistente', '¿Qué nos dicen los datos?', 'Recomendaciones', '✎'], ['aprender', 'Aprender', 'Conceptos y reflexión', '?']];
+function renderRail() {
+  var h = '<div class="grp">Ciclo S&amp;OP</div>';
+  STAGES.forEach(function (s, i) { h += '<button class="nav" data-act="go" data-v="' + s[0] + '"' + (S.view === s[0] ? ' aria-current="page"' : '') + '><span class="n">' + (i + 1) + '</span><span class="lbl">' + s[1] + '<span class="sub">' + s[2] + '</span></span></button>'; });
+  h += '<div class="grp">Herramientas</div>';
+  TOOLS.forEach(function (s) { h += '<button class="nav tool" data-act="go" data-v="' + s[0] + '"' + (S.view === s[0] ? ' aria-current="page"' : '') + '><span class="n">' + s[3] + '</span><span class="lbl">' + s[1] + '<span class="sub">' + s[2] + '</span></span></button>'; });
+  $('#rail').innerHTML = h;
+}
+function renderTop() {
+  var b = S.biz;
+  $('#bizpill').innerHTML = b && S.started ? '<span class="biz-pill"><i class="' + (b.simulated ? '' : 'own') + '"></i><b>' + esc(b.name) + '</b> · ' + esc(b.product) + ' · ' + b.period + (b.simulated ? ' · datos simulados' : '') + '</span>' : '';
+  var eb = $('#edubtn'); eb.setAttribute('aria-pressed', String(S.edu)); document.body.classList.toggle('edu-on', S.edu);
+}
+function go(v) {
+  if (!S.started && v !== 'datos') v = 'datos';
+  S.view = v; save(); renderRail(); renderTop();
+  var root = $('#main'); root.innerHTML = ''; (V[v].mount || function () { })(root); V[v].update(); window.scrollTo(0, 0);
+}
+function touch() { save(); renderTop(); if (V[S.view]) V[S.view].update(); }
+function remount() { var y = window.scrollY; var root = $('#main'); root.innerHTML = ''; V[S.view].mount(root); V[S.view].update(); window.scrollTo(0, y); }
+
+/* ---------- eventos delegados ---------- */
+var ACT = {};
+function initEvents() {
+  var main = $('#main');
+  document.body.addEventListener('input', function (e) {
+    var el = e.target; if (!el.dataset || !el.dataset.k) return;
+    var k = el.dataset.k, t = el.dataset.t, v;
+    if (t === 'b') v = el.checked; else if (t === 's') v = el.type === 'text' ? el.value.replace(/[<>]/g, '') : el.value; else v = nval(el.value);
+    if (el.dataset.int && v !== null) v = Math.round(v);
+    if (el.dataset.scale && v !== null) v = v / Number(el.dataset.scale);
+    setPath(S.biz, k, v);
+    $$('[data-k="' + k + '"]').forEach(function (o) { if (o !== el && (o.type === 'range' || o.type === 'number')) o.value = fv(el.dataset.scale && v !== null ? v * Number(el.dataset.scale) : v); });
+    if (el.dataset.remount) { save(); remount(); return; }
+    touch();
+  });
+  document.body.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-act]'); if (!el) return;
+    var a = el.dataset.act; if (ACT[a]) ACT[a](el, e);
+  });
+}
+ACT.go = function (el) { go(el.dataset.v); };
+
+/* ---------- iconos ---------- */
+var ICONS = {
+  panaderia: '<path d="M4 14c0-4 3.6-7 8-7s8 3 8 7v3H4z"/><path d="M9 11l1 2M13 10l1 2"/>',
+  pizzeria: '<path d="M3 6c5-3 13-3 18 0l-9 15z"/><circle cx="10" cy="9" r="1"/><circle cx="14" cy="11" r="1"/><circle cx="12" cy="15" r="1"/>',
+  super: '<path d="M3 4h3l2 11h10l2-8H7"/><circle cx="10" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/>',
+  ropa: '<path d="M8 3l-5 3 2 4 3-1v11h8V9l3 1 2-4-5-3c-.5 1.5-1.8 2.3-3 2.3S8.5 4.5 8 3z"/>',
+  bebidas: '<path d="M10 3h4v3l2 3v11a1 1 0 01-1 1H9a1 1 0 01-1-1V9l2-3z"/><path d="M8 13h8"/>',
+  propio: '<path d="M12 5v14M5 12h14"/>'
+};
+function icon(id) { return '<span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[id] || ICONS.propio) + '</svg></span>'; }
+
+/* ---------- selección de negocio ---------- */
+function chooseBiz(id) {
+  var b = S.store[id];
+  if (!b) { var src = id === 'propio' ? DL.newBiz() : DLSamples.list().filter(function (x) { return x.id === id; })[0]; b = JSON.parse(JSON.stringify(src)); S.store[id] = b; }
+  S.biz = b; S.started = true; S.wi = null; _mk = null;
+}
+ACT.choose = function (el) { chooseBiz(el.dataset.id); go('datos'); toast(el.dataset.id === 'propio' ? 'Completa los datos de tu negocio. Los campos vacíos se marcan en la validación.' : 'Ejemplo cargado. Todos los datos son ficticios y puedes editarlos.'); };
+ACT.change = function () { S.started = false; go('datos'); };
+ACT.restore = function () { var id = S.biz.id, src = id === 'propio' ? DL.newBiz() : DLSamples.list().filter(function (x) { return x.id === id; })[0]; S.store[id] = JSON.parse(JSON.stringify(src)); S.biz = S.store[id]; _mk = null; S.wi = null; remount(); touch(); toast(id === 'propio' ? 'Formulario en blanco.' : 'Datos del ejemplo restaurados.'); };
+
+/* ---------- ETAPA 1 · DATOS ---------- */
+function parseSeries(text) {
+  var lines = text.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean), out = [];
+  var tok = function (s) { var n = Number(String(s).replace(/\s/g, '').replace(',', '.')); return isFinite(n) && /\d/.test(s) ? n : null; };
+  if (lines.length === 1) { lines[0].split(/[;,\t]+|\s+/).forEach(function (x) { var n = tok(x); if (n !== null) out.push(n); }); return out; }
+  lines.forEach(function (l) { var m = l.match(/-?\d+(?:[.,]\d+)?/g); if (m) { var last = m[m.length - 1]; if (/[A-Za-z]/.test(l) && m.length === 1 && /^\D*\d+\D+/.test(l) && !/^\s*-?\d/.test(l) && false) return; out.push(Number(last.replace(',', '.'))); } });
+  return out;
+}
+ACT.csvapply = function () { var t = $('#csvtxt').value, arr = parseSeries(t); if (arr.length < 1) { toast('No se encontraron números. Pega una columna (un valor por línea) o una fila separada por comas.'); return; } arr = arr.slice(-DL.MAXN); S.biz.history = arr; _mk = null; remount(); touch(); toast('Historial importado: ' + arr.length + ' períodos.'); };
+ACT.addp = function () { if (S.biz.history.length >= DL.MAXN) { toast('El máximo es 24 períodos.'); return; } S.biz.history.push(null); remount(); touch(); };
+ACT.delp = function () { if (S.biz.history.length <= 3) { toast('Se necesitan al menos 3 períodos.'); return; } S.biz.history.pop(); remount(); touch(); };
+ACT.sample = function () { var p = S.biz.period, base = 120, pat = p === 'diario' ? [.9, .85, .9, 1, 1.1, 1.3, 1.1] : null; S.biz.history = DLSamples.series(8, base, { seed: 99, noise: .08, trend: .015, pattern: pat }); if (!S.biz.price) S.biz.price = 10; _mk = null; remount(); touch(); toast('Se cargaron 8 períodos de ejemplo. Reemplázalos con tus cifras reales.'); };
+ACT.expall = function (el) { var on = el.dataset.on === '1'; S.biz.externals.forEach(function (e) { e.on = on; }); remount(); touch(); };
+
+V.datos = {
+  mount: function (root) {
+    if (!S.started) {
+      var own = S.store.propio;
+      var cards = DLSamples.list().map(function (b) { return '<button class="bcard" data-act="choose" data-id="' + b.id + '">' + icon(b.id) + '<h3>' + esc(b.name) + '</h3><div class="meta"><span class="tag sim">Datos simulados</span><span class="tag">' + b.period + '</span><span class="tag">' + b.history.length + ' períodos</span></div><p>' + esc(b.desc) + '</p></button>'; }).join('');
+      cards += '<button class="bcard own" data-act="choose" data-id="propio">' + icon('propio') + '<h3>Tu propio negocio</h3><div class="meta"><span class="tag ok">' + (own ? 'Continuar con tus datos' : 'Empieza en blanco') + '</span></div><p>Ingresa los datos de tu negocio: ventas históricas, precio, costo, inventario y las condiciones que crees que afectarán la demanda. También puedes importar un CSV.</p></button>';
+      root.innerHTML = '<div class="hero"><div><div class="kicker" style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-ink);font-weight:600">Simulador de pronóstico de demanda, planificación de inventarios y toma de decisiones empresariales</div><h2>Del dato a la decisión</h2><p>Una empresa no proyecta su demanda solo para saber cuánto podría vender. La proyecta para decidir qué producir, cuánto comprar y cómo responder cuando la realidad cambia.</p><div class="flow"><span>DATOS</span><i>→</i><span>PRONÓSTICO</span><i>→</i><span>ALINEACIÓN</span><i>→</i><span>EJECUCIÓN</span><i>→</i><span>AJUSTE</span></div></div><div class="sparkbox"><div class="lbl2" style="margin-bottom:6px">Ventas simuladas de una pizzería</div><div id="hero-chart"></div></div></div>' +
+        '<h3 style="margin-bottom:12px">Elige un negocio para empezar</h3><div class="biz-grid">' + cards + '</div>' +
+        '<p class="small muted" style="margin-top:16px;max-width:90ch">Los seis negocios funcionan igual: cinco traen datos ficticios y el sexto está en blanco para que cada participante incorpore los suyos. Tus datos se guardan solo en este navegador. No se necesita cuenta.</p>';
+      var pz = DLSamples.list()[1], hy = pz.history.slice(), fut = DL.build(pz);
+      Charts.make($('#hero-chart'), { title: 'Ventas simuladas', cats: hy.map(function (_, i) { return 'S' + (i + 1); }), series: [{ name: 'Ventas', color: 'var(--s-hist)', data: hy }], h: 190, direct: false, noTable: true, yMin: 0 });
+      return;
+    }
+    var b = S.biz, p = per(), h = '';
+    h += stageHead(1, 'DATOS', 'Conocer el negocio', 'Todo pronóstico empieza con datos. Distingue tres cosas: lo que ya <b>vendiste</b>, la <b>demanda</b> que esperas y los <b>pedidos confirmados</b> que ya tienes. Mezclarlas duplica cifras.',
+      '<div class="row"><button class="btn" data-act="change">Cambiar de negocio</button><button class="btn" data-act="restore">' + (b.simulated ? 'Restaurar ejemplo' : 'Vaciar formulario') + '</button></div>');
+    if (b.simulated) h += '<div class="callout warn" style="margin-bottom:18px"><b>Datos simulados.</b> ' + esc(b.desc) + ' Puedes editar cualquier cifra.</div>';
+    h += '<div class="grid split wide"><div class="stack">';
+    h += '<section class="card"><div class="hd"><div><h3>A. Datos básicos</h3><p class="sub">Qué vendes y con qué restricciones.</p></div></div><div class="form-grid">' +
+      fld('Nombre del negocio', 'name', { text: 1 }) + fld('Producto o categoría', 'product', { text: 1 }) + fld('Unidad de medida', 'unit', { text: 1, ph: 'unidades, cajas, kg…' }) +
+      fld('Moneda', 'currency', { text: 1, ph: '$' }) + fld('Período de análisis', 'period', { sel: [['diario', 'Diario'], ['semanal', 'Semanal'], ['mensual', 'Mensual']] }) +
+      fld('Cómo te abasteces', 'supply', { sel: [['produce', 'Producción propia'], ['buy', 'Compra a proveedor']] }) +
+      fld('Precio de venta (por unidad)', 'price', { min: 0 }) + fld('Costo unitario', 'cost', { min: 0 }) + fld('Inventario disponible hoy', 'inventory', { min: 0, step: 1 }) +
+      fld('Capacidad máx. por ' + p.l, 'capacity', { min: 0, step: 1, ph: 'Sin límite', hint: 'Producción o abastecimiento. Vacío = sin límite.' }) + '</div></section>';
+    h += '<section class="card"><div class="hd"><div><h3>B. Historial de ventas</h3><p class="sub">Entre 3 y 24 ' + p.pl + '. Edita cualquier cifra. Una celda vacía se interpola y se marca.</p></div><div class="row"><button class="btn sm" data-act="addp">+ Período</button><button class="btn sm" data-act="delp">− Período</button><button class="btn sm" data-act="sample">Cargar datos de ejemplo</button></div></div>' +
+      '<div class="cells" id="hist-cells">' + b.history.map(function (v, i) { return '<div class="cell" id="hc' + i + '"><span>' + plabel(i + 1) + '</span><input type="number" inputmode="decimal" min="0" step="any" data-k="history.' + i + '" data-t="n" aria-label="Ventas ' + plabel(i + 1) + '" value="' + esc(fv(v)) + '"></div>'; }).join('') + '</div>' +
+      '<details class="acc" style="margin-top:14px"><summary>Importar CSV o pegar desde Excel</summary><div class="body"><p class="small">Pega una columna de números (uno por línea, o dos columnas «período; ventas») o una fila separada por comas. Máximo 24; se conservan los últimos.</p><textarea id="csvtxt" rows="4" placeholder="120&#10;135&#10;128&#10;…"></textarea><div class="row" style="margin-top:8px"><button class="btn sm primary" data-act="csvapply">Usar estos datos</button><label class="btn sm" for="csvfile" style="cursor:pointer">Elegir archivo .csv</label><input type="file" id="csvfile" accept=".csv,.txt,text/csv,text/plain" hidden></div></div></details></section>';
+    h += '<section class="card"><div class="hd"><div><h3>C. Variables externas</h3><p class="sub">Actívalas solo si crees que cambiarán la demanda frente a lo ya visto en el historial. Cada una tiene su propio efecto: no todas pesan igual.</p></div><div class="row"><button class="btn sm" data-act="expall" data-on="0">Desactivar todas</button></div></div><div class="grid g2" id="ext-list">' +
+      b.externals.map(function (e, i) {
+        var lv = e.kind === 'level';
+        return '<div class="ext' + (e.on ? ' on' : '') + '" id="ext' + i + '"><div class="top2"><b>' + esc(e.label) + '</b><label class="sw"><input type="checkbox" data-k="externals.' + i + '.on" data-t="b" data-ext="' + i + '" aria-label="Activar ' + esc(e.label) + '"' + (e.on ? ' checked' : '') + '><i></i></label></div>' +
+          '<div class="ctl' + (lv ? '' : ' one') + '"><div><label for="e' + i + 'p">' + (lv ? 'Impacto (%)' : 'Variación por período (%)') + '</label><input type="number" id="e' + i + 'p" step="0.1" data-k="externals.' + i + '.pct" data-t="n" value="' + esc(fv(e.pct)) + '"></div>' +
+          (lv ? '<div><label for="e' + i + 'f">Desde ' + p.l + '</label><input type="number" id="e' + i + 'f" min="1" max="12" step="1" data-int="1" data-k="externals.' + i + '.from" data-t="n" value="' + esc(fv(e.from)) + '"></div><div><label for="e' + i + 't">Hasta ' + p.l + '</label><input type="number" id="e' + i + 't" min="1" max="12" step="1" data-int="1" data-k="externals.' + i + '.to" data-t="n" value="' + esc(fv(e.to)) + '"></div>' : '') + '</div><div class="note">' + esc(e.note) + '</div></div>';
+      }).join('') + '</div></section>';
+    h += '<section class="card"><div class="hd"><div><h3>D. Variables operativas</h3><p class="sub">Lo que ya está comprometido y lo que restringe la operación.</p></div></div><div class="form-grid">' +
+      fld('Inventario en tránsito (' + esc(b.unit) + ')', 'inTransitQty', { min: 0, step: 1, hint: 'Ya pedido y por llegar.' }) + fld('Llega en el ' + p.l + ' n.º', 'inTransitAt', { min: 1, max: 12, step: 1 }) +
+      fld('Pedidos pendientes de entrega', 'pendingOrders', { min: 0, step: 1, hint: 'Pedidos de ' + p.pl + ' anteriores aún sin atender. Se suman al primer ' + p.l + '.' }) +
+      fld('Tiempo de reposición (lead time, en ' + p.pl + ')', 'leadTime', { min: 0, max: 12, step: 1, hint: 'Desde que decides hasta que llega.' }) + fld('Variabilidad del lead time (desv. est.)', 'leadTimeSd', { min: 0, step: 0.1, hint: 'Opcional. 0 = confiable.' }) +
+      fld('Nivel de servicio deseado (%)', 'serviceLevel', { min: 50, max: 99.9, step: 0.1, hint: 'Probabilidad objetivo de no quedarte sin stock.' }) +
+      fld('Costo de almacenar (por unidad y ' + p.l + ')', 'holdCost', { min: 0 }) + fld('Costo de faltante (por unidad no atendida)', 'stockoutCost', { min: 0, hint: 'Pérdida de imagen o penalización, además del margen perdido.' }) + '</div>' +
+      '<div style="margin-top:16px"><div class="lbl2" style="margin-bottom:6px">Pedidos confirmados por ' + p.l + ' futuro</div><div class="cells">' + Array.apply(null, Array(DL.MAXH)).map(function (_, i) { return '<div class="cell"><span>' + plabel(i + 1) + '</span><input type="number" inputmode="decimal" min="0" step="any" data-k="confirmed.' + i + '" data-t="n" aria-label="Pedidos confirmados ' + plabel(i + 1) + '" value="' + esc(fv(b.confirmed[i])) + '"></div>'; }).join('') + '</div><p class="small muted" style="margin-top:6px">Los pedidos confirmados ya forman parte de la demanda: <b>no se suman</b> al pronóstico. Si superan el pronóstico, prevalecen.</p></div>' +
+      '<details class="acc" style="margin-top:14px"><summary>Supuestos de respuesta a precio y publicidad (avanzado)</summary><div class="body"><div class="form-grid">' + fld('Elasticidad precio-demanda', 'priceElasticity', { step: 0.1, hint: '−1,2: si subes el precio 10 %, la demanda baja ≈ 11 %.' }) + fld('Elasticidad de la publicidad', 'mktElasticity', { step: 0.01, min: 0, hint: '0,10: +10 % de presupuesto → +1 % de demanda.' }) + fld('Presupuesto de marketing actual (por ' + p.l + ')', 'mktBase', { min: 0, ph: 'Automático (2 % de ingresos)' }) + '</div><p class="small muted" style="margin-top:8px">Son supuestos tuyos, no resultados estadísticos. Úsalos para explorar, no para predecir.</p></div></details></section>';
+    h += '</div><div class="stack" style="position:sticky;top:calc(var(--topH,88px) + env(safe-area-inset-top,0px))"><section class="card" id="d-status"></section>' + eduBox('Ventas, demanda y pedidos', '<p><b>Ventas observadas:</b> lo que lograste entregar. <b>Demanda:</b> lo que los clientes habrían comprado si siempre hubiera stock. <b>Pedidos confirmados:</b> demanda ya asegurada.</p><p>Si un período tuvo faltantes, las ventas observadas <b>subestiman</b> la demanda. Por eso conviene anotarlo en la etapa Ajuste.</p>') + '</div></div>';
+    root.innerHTML = h;
+    var cf = $('#csvfile'); if (cf) cf.addEventListener('change', function () { var f = cf.files[0]; if (!f) return; var r = new FileReader(); r.onload = function () { $('#csvtxt').value = String(r.result).slice(0, 20000); ACT.csvapply(); }; r.readAsText(f); });
+    $$('[data-ext]').forEach(function (x) { x.addEventListener('input', function () { var c = $('#ext' + x.dataset.ext); if (c) c.classList.toggle('on', x.checked); }); });
+    $$('[data-k="period"], [data-k="supply"]').forEach(function (x) { x.dataset.remount = '1'; });
+  },
+  update: function () {
+    if (!S.started) return;
+    var b = S.biz, v = DL.validate(b), box = $('#d-status'); if (!box) return;
+    var y = v.hist.y, h = '<h3>Calidad de los datos</h3>';
+    $$('.cell', $('#hist-cells')).forEach(function (c, i) { c.classList.toggle('miss', v.hist.missing.length > 0 && b.history[i] === null || b.history[i] === ''); });
+    if (v.errors.length) h += '<div class="alerts" style="margin-top:10px">' + v.errors.map(function (e) { return '<div class="alert crit"><span class="ic">!</span><div><p style="color:var(--ink)">' + esc(e) + '</p></div></div>'; }).join('') + '</div>';
+    else h += '<div class="alert ok" style="margin-top:10px"><span class="ic">✓</span><div><p style="color:var(--ink)">Los datos mínimos están completos.</p></div></div>';
+    if (v.warnings.length) h += '<ul class="clean small" style="margin-top:10px">' + v.warnings.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul>';
+    if (y.length >= 1) {
+      h += '<div class="kpis" style="margin-top:12px;grid-template-columns:repeat(2,minmax(0,1fr))">' + kpi('Períodos válidos', y.length, '', '') + kpi('Venta media', f0(DL.mean(y)), esc(b.unit), '') + '</div><div id="d-spark" style="margin-top:10px"></div>';
+    }
+    h += '<div class="row" style="margin-top:14px"><button class="btn primary" data-act="go" data-v="pronostico"' + (v.errors.length ? ' disabled' : '') + '>Continuar al pronóstico →</button></div>';
+    var act = b.externals.filter(function (e) { return e.on; });
+    h += '<div style="margin-top:16px"><div class="lbl2">Hipótesis activas</div>' + (act.length ? '<ul class="clean small">' + act.map(function (e) { return '<li><b>' + esc(e.label) + ':</b> ' + (e.pct > 0 ? '+' : '') + DL.fmt(e.pct, 1) + ' %' + (e.kind === 'trend' ? ' por ' + per().l + ' (acumulativo)' : ' entre ' + per().l + ' ' + e.from + ' y ' + e.to) + '</li>'; }).join('') + '</ul>' : '<p class="small muted">Ninguna. El pronóstico se basa solo en el historial.</p>') + '</div>';
+    box.innerHTML = h;
+    var sp = $('#d-spark'); if (sp && y.length) { Charts.make(sp, { title: 'Ventas históricas', cats: y.map(function (_, i) { return plabel(i + 1, true); }), series: [{ name: 'Ventas', color: 'var(--s-hist)', data: y, dots: y.length < 16 }, { name: 'Promedio', color: 'var(--s-conf)', data: y.map(function () { return DL.mean(y); }), dash: '5 4', dots: false, w: 1.6 }], h: 150, direct: false, noTable: true, yMin: 0 }); }
+  }
+};
+
+/* ===== Etapa 2 (Pronóstico) y Etapa 3 (Alineación) ===== */
+function variant(mut, ov) { var nb = JSON.parse(JSON.stringify(S.biz)); mut(nb); return DL.build(nb, ov); }
+function histCats(M, H) { var c = [], i; for (i = 0; i < M.n; i++) c.push(plabel(i + 1 - M.n, true).replace('S-', 'S−').replace('M-', 'M−')); return c; }
+function catsAll(M) { var c = [], i, p = S.biz.period, pre = p === 'diario' ? 'D' : p === 'semanal' ? 'S' : 'M'; for (i = 1; i <= M.n; i++) c.push(pre + (i - M.n)); for (i = 1; i <= M.D.length; i++) c.push(pre + '+' + i); return c.map(function (x) { return x.replace('-', '−'); }); }
+function nullsN(n) { var a = []; for (var i = 0; i < n; i++) a.push(null); return a; }
+
+ACT.pickm = function (el) { S.biz.method = el.dataset.m; var r = $('input[name="meth"][value="' + el.dataset.m + '"]'); if (r) r.checked = true; touch(); };
+
+V.pronostico = {
+  mount: function (root) {
+    var b = S.biz, p = per();
+    root.innerHTML = stageHead(2, 'PRONÓSTICO', '¿Cuánto vamos a vender?', 'Tres métodos proyectan la demanda a partir de tus datos. Compara sus errores históricos, elige uno y observa el rango de incertidumbre: nunca es una cifra exacta.') +
+      '<div class="grid split"><div class="stack"><section class="card"><h3>Controles</h3><div class="ctl-row" style="margin-top:12px"><div class="rtop"><label for="p-h">Períodos a proyectar</label><b id="p-hv"></b></div><input type="range" id="p-h" min="1" max="12" step="1" data-k="horizon" data-t="n" data-int="1" value="' + b.horizon + '"></div>' +
+      '<div class="lbl2" style="margin:16px 0 6px">Método</div><div class="radio">' +
+      [['auto', 'Recomendado por la herramienta', 'Elige según el error histórico cuando hay evidencia suficiente.'], ['m1', '1 · Promedio móvil', 'Promedia los últimos k períodos. Simple y estable.'], ['m2', '2 · Suavizamiento exponencial', 'Da más peso a lo reciente (α).'], ['m3', '3 · Proyección ajustada', 'Base + estacionalidad + variables externas activas.']].map(function (o) { return '<label class="opt"><input type="radio" name="meth" data-k="method" data-t="s" value="' + o[0] + '"' + ((b.method || 'auto') === o[0] ? ' checked' : '') + '><div><b>' + o[1] + '</b><span>' + o[2] + '</span></div></label>'; }).join('') + '</div>' +
+      '<div class="ctl-row" style="margin-top:16px"><div class="rtop"><label for="p-k">Ventana del promedio móvil (k)</label><b id="p-kv"></b></div><input type="range" id="p-k" min="1" max="12" step="1" data-k="maWindow" data-t="n" data-int="1" value="' + b.maWindow + '"></div>' +
+      '<div class="ctl-row" style="margin-top:12px"><div class="rtop"><label for="p-a">Peso de lo reciente (α)</label><b id="p-av"></b></div><input type="range" id="p-a" min="0.05" max="0.95" step="0.05" data-k="alpha" data-t="n" value="' + b.alpha + '"></div>' +
+      '<div class="row" style="margin-top:14px"><label class="sw"><input type="checkbox" id="p-sa" data-k="seasonAuto" data-t="b"' + (b.seasonAuto ? ' checked' : '') + '><i></i></label><label for="p-sa" style="font-weight:600;font-size:14px">Detectar estacionalidad del historial</label></div>' +
+      '<div class="row" style="margin-top:8px"><label for="p-sl" class="small">Ciclo de repetición (' + p.pl + ')</label><input type="number" id="p-sl" style="width:80px" min="2" max="12" step="1" data-int="1" data-k="seasonLen" data-t="n" value="' + b.seasonLen + '"></div><p class="small muted" id="p-sn" style="margin-top:4px"></p>' +
+      '<div class="ctl-row" style="margin-top:14px"><div class="rtop"><label for="p-sp">Amplitud de escenarios si hay pocos datos</label><b id="p-spv"></b></div><input type="range" id="p-sp" min="0" max="50" step="1" data-k="scenarioPct" data-t="n" data-int="1" value="' + b.scenarioPct + '"><span class="small muted">Solo se usa si no hay datos suficientes para medir el error. Es un supuesto tuyo.</span></div></section>' +
+      eduBox('Pronosticar es reducir incertidumbre, no eliminarla', '<p>Un buen pronóstico se acompaña de un rango. Si tu error histórico típico es de 40 unidades, una cifra de 300 realmente significa «alrededor de 300, probablemente entre 260 y 340».</p><p><b>Estacionalidad:</b> patrón que se repite (los fines de semana en una panadería, diciembre en una tienda).</p>') + '</div>' +
+      '<div class="stack"><section class="card"><div class="hd"><div><h3>Ventas históricas y demanda proyectada</h3><p class="sub" id="p-sub"></p></div></div><div id="p-chart"></div></section><div id="p-expl"></div><section class="card"><h3>Comparación de métodos</h3><p class="sub">Se evalúa cada método sobre el mismo tramo del historial: «¿cuánto habría fallado si lo hubiera usado?».</p><div id="p-cmp" style="margin-top:12px"></div></section></div></div>' +
+      '<div class="grid g2" style="margin-top:18px"><section class="card"><h3>Fórmulas y explicación sencilla</h3><div id="p-form" style="margin-top:8px"></div></section><section class="card"><h3>Hipótesis utilizadas</h3><div id="p-ass" style="margin-top:8px"></div><h4 style="margin-top:18px">Limitaciones de estos modelos</h4><ul class="clean small ink2"><li>Suponen que el futuro se parece al pasado reciente. Un quiebre (pandemia, competidor nuevo) los descoloca.</li><li>Los efectos externos son <b>supuestos tuyos</b>: el historial no los valida.</li><li>Con pocos períodos, el error medido es poco confiable. La herramienta lo avisa y no inventa precisión.</li><li>Las ventas históricas pueden subestimar la demanda real si hubo faltantes.</li><li>Los intervalos son rangos orientativos de ±1 error típico; asumen que los errores futuros se parecen a los pasados.</li></ul></section></div>';
+  },
+  update: function () {
+    var M = getM(), b = S.biz; if (!$('#p-chart')) return;
+    if (!M.ok) { $('#main').innerHTML = noData(M); return; }
+    var p = per(), F = M.F, u = b.unit, H = M.D.length, n = M.n;
+    $('#p-hv').textContent = H + ' ' + (H === 1 ? p.l : p.pl); $('#p-kv').textContent = F.k + ' ' + (F.k === 1 ? p.l : p.pl); $('#p-av').textContent = f2(F.alpha); $('#p-spv').textContent = b.scenarioPct + ' %';
+    $('#p-sn').textContent = b.seasonAuto ? (F.seasonOk ? 'Índices calculados con ' + Math.floor(n / F.seasonLen) + ' ciclos completos. Evita activar a la vez «Estacionalidad (manual)».' : 'Se necesitan al menos 2 ciclos completos (' + 2 * F.seasonLen + ' ' + p.pl + ') y tienes ' + n + '. No se aplica.') : 'Apagado: el método 3 solo usa la estacionalidad manual.';
+    $('#p-sub').textContent = 'Método mostrado: ' + M.rec.names[M.methodId] + (b.method === 'auto' || !b.method ? ' (recomendado)' : ' (elegido por ti)') + '.';
+    var cats = catsAll(M), hist = M.y.concat(nullsN(H)), fut = function (a) { return nullsN(n).concat(a); };
+    var series = [{ name: 'Ventas históricas', short: 'Históricas', color: 'var(--s-hist)', data: hist }, { name: 'Escenario base', short: 'Base', color: 'var(--s-base)', data: fut(M.proj), w: 3 },
+      { name: 'Optimista', color: 'var(--s-opt)', data: fut(M.opt), dash: '6 4', w: 2, dots: false }, { name: 'Pesimista', color: 'var(--s-pes)', data: fut(M.pes), dash: '6 4', w: 2, dots: false }];
+    if (M.conf.some(function (c) { return c > 0; })) series.push({ name: 'Pedidos confirmados', short: 'Confirmados', type: 'bar', color: 'var(--s-conf)', opacity: .55, data: fut(M.conf.map(function (c) { return c > 0 ? c : null; })) });
+    Charts.make($('#p-chart'), { title: 'Ventas históricas y pronóstico', cats: cats, series: series, bands: [{ name: 'Rango orientativo', lo: fut(M.pes), hi: fut(M.opt), color: 'var(--s-base)', opacity: .12 }], split: n, splitLabel: 'Hoy →', h: 340, yMin: 0 });
+    var el = DL.explainForecast(b, M);
+    $('#p-expl').innerHTML = '<div class="callout"><b>Lectura automática.</b> ' + esc(el) + '</div>' + '<div class="callout ' + (M.rec.enough ? '' : 'warn') + '" style="margin-top:10px"><b>Método sugerido: ' + M.rec.names[M.rec.id] + '.</b> ' + esc(M.rec.reason) + '</div>' + (M.sigma.source !== 'backtest' ? '<div class="callout warn" style="margin-top:10px"><b>Cautela con la incertidumbre.</b> El rango usa: ' + esc(M.sigma.label) + '.</div>' : '<div class="small muted" style="margin-top:8px">Rango orientativo = pronóstico ± ' + f1(M.sigma.sigma) + ' ' + esc(u) + ' (' + esc(M.sigma.label) + '). Más lejos en el tiempo la incertidumbre real es mayor.</div>');
+    var rows = [['m1', 'Promedio móvil (k = ' + F.k + ')'], ['m2', 'Suavizamiento exponencial (α = ' + f2(F.alpha) + ')'], ['m3', 'Proyección ajustada']], h = '<div class="tw cmp"><table><thead><tr><th>Método</th><th>Próx. ' + p.l + '</th><th>MAE</th><th>WAPE</th><th>Sesgo</th><th>Períodos evaluados</th><th></th></tr></thead><tbody>';
+    rows.forEach(function (r) {
+      var res = F.res[r[0]], sel = M.methodId === r[0], nx = F.paths[r[0]][0];
+      h += '<tr class="' + (sel ? 'sel' : '') + '"><td>' + r[1] + (M.rec.id === r[0] ? ' <span class="tag ok">Recomendado</span>' : '') + '</td><td>' + f0(nx) + '</td>';
+      if (!res) h += '<td colspan="4" class="muted" style="text-align:left">No evaluable con el historial: sus efectos son supuestos tuyos.</td>';
+      else if (!res.n) h += '<td colspan="4" class="muted" style="text-align:left">Sin períodos para evaluar (necesita más historial).</td>';
+      else h += '<td>' + f1(res.mae) + '</td><td>' + (res.wape === null ? '—' : pc(res.wape)) + '</td><td>' + (res.bias === null ? '—' : (res.bias > 0 ? '+' : '') + pc(res.bias)) + '</td><td>' + res.n + (res.n < 4 ? ' <span class="tag warn">pocos</span>' : '') + '</td>';
+      h += '<td>' + (sel ? '<span class="tag info">En uso</span>' : '<button class="btn sm" data-act="pickm" data-m="' + r[0] + '">Usar este</button>') + '</td></tr>';
+    });
+    h += '</tbody></table></div><p class="small muted" style="margin-top:8px"><b>WAPE</b> = Σ|error| / Σ ventas. <b>Sesgo</b> positivo = el método sobreestima. Se evita el MAPE porque explota cuando hay períodos con ventas cercanas a cero.</p>';
+    if (!M.rec.enough) h += '<div class="callout warn" style="margin-top:10px">Con ' + F.evalPoints + ' período(s) evaluable(s) no es honesto declarar un «ganador». Agrega historial para comparar con solidez.</div>';
+    $('#p-cmp').innerHTML = h;
+    /* fórmulas con números reales */
+    var last = M.y.slice(-F.k), act = b.externals.filter(function (e) { return e.on; });
+    $('#p-form').innerHTML = '<h4>1 · Promedio móvil</h4><div class="formula">Pronóstico = (V<sub>n</sub> + … + V<sub>n−k+1</sub>) / k</div><p class="small ink2">Promedia los últimos ' + F.k + ' ' + p.pl + ': (' + last.map(f0).join(' + ') + ') / ' + F.k + ' = <b>' + f1(F.ma.next) + '</b> ' + esc(u) + '. Trata todos por igual y reacciona lento a los cambios.</p>' +
+      '<h4 style="margin-top:14px">2 · Suavizamiento exponencial</h4><div class="formula">Nivel<sub>t</sub> = α·V<sub>t</sub> + (1 − α)·Nivel<sub>t−1</sub></div><p class="small ink2">Con α = ' + f2(F.alpha) + ', el dato más reciente pesa ' + pc(F.alpha, 0) + ' y el resto se reparte entre los anteriores. Nivel final = <b>' + f1(F.ses.level) + '</b> ' + esc(u) + '. Un α alto sigue los cambios, uno bajo suaviza el ruido.</p>' +
+      '<h4 style="margin-top:14px">3 · Proyección ajustada</h4><div class="formula">Demanda<sub>h</sub> = Base × Índice estacional<sub>h</sub> × Π(1 + efecto<sub>i,h</sub>)</div><p class="small ink2">Base = nivel del método 2' + (F.seasonOk ? ' sin estacionalidad (' + f1(F.level3) + ')' : ' (' + f1(F.level3) + ')') + '. ' + (act.length ? 'Se multiplica por los efectos que activaste: ' + act.map(function (e) { return esc(e.label) + ' (' + (e.pct > 0 ? '+' : '') + DL.fmt(e.pct, 1) + ' %)'; }).join(', ') + '.' : 'No hay variables activas, así que coincide con el método 2.') + '</p>' +
+      '<h4 style="margin-top:14px">Errores</h4><div class="formula">MAE = Σ|V − P| / n &nbsp;·&nbsp; WAPE = Σ|V − P| / ΣV</div>' +
+      eduBox('¿Por qué importa el sesgo?', '<p>Un pronóstico puede acertar «en promedio» y aun así equivocarse siempre en la misma dirección. Si el sesgo es positivo, compras de más; si es negativo, te quedas corto.</p>');
+    var ah = '';
+    if (!act.length && !F.seasonOk) ah = '<p class="small ink2">No hay variables externas activas ni estacionalidad detectada. El método 3 es igual al 2. Actívalas en la etapa Datos para explorar efectos.</p>';
+    else {
+      ah = '<div class="tw"><table><thead><tr><th>' + p.l.charAt(0).toUpperCase() + p.l.slice(1) + '</th><th>Base</th>' + (F.seasonOk ? '<th>Estac.</th>' : '') + '<th>Efectos externos</th><th>Resultado</th></tr></thead><tbody>';
+      for (var i = 0; i < H; i++) { var fl = F.extList[i], fac = fl.reduce(function (a, x) { return a * x.factor; }, 1), si = F.seasonOk ? F.sIdx[(n + i) % F.seasonLen] : 1; ah += '<tr><td>' + plabel(i + 1) + '</td><td>' + f0(F.level3) + '</td>' + (F.seasonOk ? '<td>×' + f2(si) + '</td>' : '') + '<td title="' + esc(fl.map(function (x) { return x.label + ' ×' + DL.fmt(x.factor, 3); }).join('; ')) + '">×' + DL.fmt(fac, 3) + (fl.length ? ' (' + fl.length + ')' : '') + '</td><td><b>' + f0(F.paths.m3[i]) + '</b></td></tr>'; }
+      ah += '</tbody></table></div><p class="small muted" style="margin-top:8px">Los factores se multiplican entre sí. Pasa el cursor sobre un factor para ver su detalle. Los efectos son <b>incrementales</b> respecto de las condiciones del historial.</p>';
+      if (act.some(function (e) { return e.id === 'precio'; })) ah += '<div class="callout warn" style="margin-top:10px">Tienes activo «Cambios de precio». No lo combines con el cambio de precio de la etapa Ejecución: se contaría dos veces.</div>';
+      if (F.seasonOk && act.some(function (e) { return e.id === 'estac'; })) ah += '<div class="callout warn" style="margin-top:10px">Tienes estacionalidad automática y manual a la vez. Probablemente cuentas el mismo efecto dos veces.</div>';
+    }
+    $('#p-ass').innerHTML = ah;
+  }
+};
+
+/* ---------- ETAPA 3 · ALINEACIÓN ---------- */
+function shock(M, ov) {
+  var mod = DL.build(S.biz, ov);
+  var c = Object.assign({}, mod.ctx, { produce: M.sugg.produce, buy: M.sugg.buy });
+  return DL.simulate(c).totals;
+}
+V.alineacion = {
+  mount: function (root) {
+    root.innerHTML = stageHead(3, 'ALINEACIÓN', '¿Qué debemos hacer?', 'Ventas, operaciones, inventarios y finanzas miran el mismo pronóstico y lo traducen a decisiones. Este es un S&OP simplificado: un solo plan que todas las áreas pueden aceptar.') +
+      '<div id="a-sum"></div><section class="card" style="margin:18px 0"><div class="hd"><div><h3>Plan operativo sugerido</h3><p class="sub">Balance de inventario: existencias + recepciones − ventas = existencias finales. Respeta capacidad, lead time y stock de seguridad.</p></div><button class="btn primary" data-act="go" data-v="ejecucion">Probar decisiones →</button></div><div id="a-plan"></div></section><div class="grid g2" id="a-areas"></div>' +
+      '<div style="margin-top:18px">' + eduBox('¿Qué es S&OP?', '<p>Sales &amp; Operations Planning: un proceso periódico donde ventas, operaciones, inventarios y finanzas acuerdan <b>un solo plan</b>. Sin él, marketing promete lo que operaciones no puede producir y finanzas compra lo que nadie vende.</p>') + '</div>';
+  },
+  update: function () {
+    var M = getM(), b = S.biz; if (!$('#a-plan')) return;
+    if (!M.ok) { $('#main').innerHTML = noData(M); return; }
+    var p = per(), u = b.unit, sg = M.sugg.sim, T = sg.totals, H = M.D.length, produce = b.supply === 'produce', cap = M.P.cap;
+    var tot = DL.sum(M.sugg.produce) + DL.sum(M.sugg.buy);
+    var firstIdx = -1; M.sugg.produce.forEach(function (x, i) { if (firstIdx < 0 && (x + M.sugg.buy[i]) > 0.5) firstIdx = i; });
+    var h = '<div class="tw"><table><thead><tr><th>' + p.l.charAt(0).toUpperCase() + p.l.slice(1) + '</th><th>Demanda esperada</th><th>Confirmados</th><th>Inv. inicial</th><th>Recepciones</th><th>' + (produce ? 'Producir' : 'Comprar') + '</th><th>Ventas</th><th>Inv. final</th><th>Estado</th></tr></thead><tbody>';
+    sg.rows.forEach(function (r, i) { var st = r.stockout ? '<span class="tag crit">Faltante ' + f0(r.lost) + '</span>' : r.end < M.ss * 0.999 ? '<span class="tag warn">Bajo stock seg.</span>' : '<span class="tag ok">OK</span>'; h += '<tr><td>' + plabel(i + 1) + '</td><td>' + f0(M.D[i]) + '</td><td>' + (M.conf[i] > 0 ? f0(M.conf[i]) : '—') + '</td><td>' + f0(r.begin) + '</td><td>' + f0(r.receipts) + '</td><td><b>' + f0(r.placed) + '</b></td><td>' + f0(r.sales) + '</td><td>' + f0(r.end) + '</td><td>' + st + '</td></tr>'; });
+    h += '</tbody></table></div><p class="small muted" style="margin-top:8px">«' + (produce ? 'Producir' : 'Comprar') + '» es la cantidad que decides en ese ' + p.l + '; llega ' + (M.P.L === 0 ? 'en el mismo ' + p.l : M.P.L + ' ' + (M.P.L === 1 ? p.l : p.pl) + ' después') + '. Demanda esperada incluye pedidos pendientes' + (M.backlog > 0 ? ' (' + f0(M.backlog) + ')' : '') + ' y el mayor entre pronóstico y pedidos confirmados.</p>';
+    $('#a-plan').innerHTML = h;
+    /* respuestas por área */
+    var mk20 = variant(function (nb) { nb.dec.marketing = M.dm.mkt * 1.2; }), d10 = variant(function (nb) { nb.dec.price = M.P.price0 * 0.9; });
+    var up = shock(M, { demandMult: 1.2 }), dn = shock(M, { demandMult: 0.8 }), dly = shock(M, { extraDelay: 1 });
+    var dMk = mk20.sugg.sim.totals.profit - T.profit, dPr = d10.sugg.sim.totals.profit - T.profit;
+    var peak = Math.max.apply(null, M.D), util = isFinite(cap) ? M.dBar / cap : null, idle = isFinite(cap) ? 1 - util : null;
+    var unit1 = u.replace(/s$/, '');
+    var A1 = [
+      ['¿Conviene aumentar la publicidad?', 'Con tu elasticidad (' + f2(b.mktElasticity) + '), subir el presupuesto 20 % (+' + money(M.dm.mkt * 0.2 * H) + ' en el horizonte) cambiaría la utilidad en ' + money(dMk) + '.', dMk > 0 ? 'Decisión: sí conviene, siempre que la capacidad alcance.' : 'Decisión: no conviene; el costo supera el margen adicional.'],
+      ['¿Se necesitan promociones?', idle !== null && idle > 0.25 && T.endInv > M.ss + M.dBar ? 'Tienes ' + pc(idle, 0) + ' de capacidad libre y terminas con inventario de sobra (' + f0(T.endInv) + ' ' + u + ').' : T.lost > 0.5 ? 'Ya hay faltantes (' + f0(T.lost) + ' ' + u + '): más demanda sin más abastecimiento no ayuda.' : 'Atiendes la demanda sin exceso notable: no hay una necesidad urgente.', idle !== null && idle > 0.25 && T.endInv > M.ss + M.dBar ? 'Decisión: una promoción puntual ayudaría a rotar inventario.' : T.lost > 0.5 ? 'Decisión: no promociones hasta resolver el abastecimiento.' : 'Decisión: mantener, sin promoción.'],
+      ['¿Qué sucede si la demanda aumenta 20 %?', 'Con el plan actual atenderías ' + pc(up.fill, 0) + ' de la demanda: faltarían ' + f0(up.lost) + ' ' + u + ' y el margen sin vender sería ' + money(up.lostMargin) + '.', up.lost > T.lost + 0.5 ? 'Decisión: prepara una reserva o capacidad adicional.' : 'Decisión: el plan absorbe ese aumento.'],
+      ['¿Cómo afecta una promoción al margen?', 'Un descuento de 10 % (elasticidad ' + f1(b.priceElasticity) + ') llevaría la utilidad del horizonte de ' + money(T.profit) + ' a ' + money(d10.sugg.sim.totals.profit) + ' (' + (dPr >= 0 ? '+' : '') + money(dPr) + '). El margen por ' + unit1 + ' pasa de ' + money(M.P.price0 - M.P.cost) + ' a ' + money(M.P.price0 * 0.9 - M.P.cost) + '.', dPr > 0 ? 'Decisión: con tu elasticidad, el volumen compensa el descuento.' : 'Decisión: con tu elasticidad, descontar destruye margen.']
+    ];
+    var shortCap = isFinite(cap) && peak > cap;
+    var A2 = [
+      ['¿Cuántas unidades necesitamos ' + (produce ? 'producir' : 'comprar') + '?', 'Para cubrir ' + f0(DL.sum(M.D)) + ' ' + u + ' de demanda, con ' + f0(M.inv0) + ' en inventario' + (DL.sum(M.ctx.A) > 0 ? ' y ' + f0(DL.sum(M.ctx.A)) + ' en tránsito' : '') + ' y un stock de seguridad de ' + f0(M.ss) + ', hay que ' + (produce ? 'producir' : 'pedir') + ' ' + f0(tot) + ' ' + u + ' en el horizonte.', firstIdx >= 0 ? 'Decisión: primera orden de ' + f0(M.sugg.produce[firstIdx] + M.sugg.buy[firstIdx]) + ' en el ' + p.l + ' ' + (firstIdx + 1) + '.' : 'Decisión: no hace falta abastecer en este horizonte.'],
+      ['¿Tenemos suficiente capacidad?', isFinite(cap) ? 'Capacidad: ' + f0(cap) + ' por ' + p.l + '. Demanda media: ' + f0(M.dBar) + ' (' + pc(util, 0) + ' de uso) y pico de ' + f0(peak) + '.' : 'No definiste capacidad; se asume sin límite.', isFinite(cap) ? (shortCap ? 'Decisión: el pico excede la capacidad; anticipa producción en períodos con holgura.' : 'Decisión: la capacidad alcanza.') : 'Decisión: define una capacidad para evaluar el riesgo.'],
+      ['¿Hay que aumentar turnos o contratar personal?', isFinite(cap) ? (shortCap ? 'Para atender el pico necesitarías ' + pc(peak / cap - 1, 0) + ' más capacidad (' + f0(peak - cap) + ' ' + u + ' por ' + p.l + ').' : (util > 0.85 ? 'Operas al ' + pc(util, 0) + ' de capacidad: cualquier alza te dejaría corto.' : 'Operas al ' + pc(util, 0) + ': hay holgura.')) : 'Sin capacidad definida no se puede evaluar.', isFinite(cap) ? (shortCap || util > 0.85 ? 'Decisión: evalúa un turno extra o un segundo proveedor.' : 'Decisión: no por ahora.') : ''],
+      ['¿Qué pasa si la demanda supera la capacidad?', isFinite(cap) ? 'Con +20 % de demanda, el plan solo cubriría ' + pc(up.fill, 0) + ': no se atenderían ' + f0(up.lost) + ' ' + u + '. Las ventas perdidas no se recuperan.' : 'Sin límite de capacidad, el riesgo es de caja, no de producción.', 'Decisión: decide con anticipación qué clientes o productos se priorizan.']
+    ];
+    var A3 = [
+      ['¿Cuánto inventario necesitamos?', 'Stock de seguridad: ' + f0(M.ss) + ' ' + u + '. Nivel objetivo de reposición S = ' + f0(M.S) + ' (demanda de ' + (M.P.L + 1) + ' ' + (M.P.L + 1 === 1 ? p.l : p.pl) + ' + seguridad). Hoy tienes ' + f0(M.inv0) + ' (' + f1(M.coverPeriods) + ' ' + p.pl + ' de cobertura).', 'Decisión: ' + (M.needNow > 0.5 ? 'reponer ' + f0(M.needNow) + ' para llegar a S.' : 'tu posición de inventario ya cubre S.')],
+      ['¿Cuándo debemos hacer pedidos?', 'Revisando cada ' + p.l + ': cuando la posición de inventario (existencias + en camino) baje de S = ' + f0(M.S) + ', pide la diferencia. Con lead time de ' + M.P.L + ', lo que pidas hoy llega ' + (M.P.L === 0 ? 'hoy mismo' : 'en ' + M.P.L + ' ' + (M.P.L === 1 ? p.l : p.pl)) + '.', 'Decisión: ' + (firstIdx === 0 ? 'pedir ya.' : firstIdx > 0 ? 'primer pedido en el ' + p.l + ' ' + (firstIdx + 1) + '.' : 'sin pedidos necesarios.')],
+      ['¿Cuál es el stock de seguridad?', 'SS = z × σ × √(L + 1) = ' + f2(M.P.z) + ' × ' + f1(M.sSig) + ' × √' + (M.P.L + 1) + (num0(b.leadTimeSd) > 0 ? ' (más variabilidad del lead time)' : '') + ' = ' + f0(M.ss) + ' ' + u + '. z sale del nivel de servicio de ' + f1(M.P.sl) + ' %; σ es ' + esc(M.sigma.label) + '.', 'Decisión: más servicio exige más stock; el costo crece más rápido que el beneficio.'],
+      ['¿Qué ocurre si el proveedor se retrasa?', 'Con ' + (M.P.L + 1) + ' ' + (M.P.L + 1 === 1 ? p.l : p.pl) + ' de lead time en vez de ' + M.P.L + ', las ventas perdidas pasarían de ' + f0(T.lost) + ' a ' + f0(dly.lost) + ' ' + u + ' y el servicio de ' + pc(T.fill, 0) + ' a ' + pc(dly.fill, 0) + '.', dly.lost > T.lost + 0.5 ? 'Decisión: un colchón extra o un proveedor alterno vale la pena.' : 'Decisión: el colchón actual absorbe un retraso.']
+    ];
+    var coAdd = M.P.hold, cu = (M.P.price - M.P.cost) + M.P.stockout, ratio = coAdd > 0 ? cu / coAdd : null;
+    var A4 = [
+      ['¿Cuánto costará abastecer la demanda?', 'Costo de lo que ' + (produce ? 'produces' : 'compras') + ' (' + f0(T.placedUnits) + ' × ' + money(M.P.cost) + ') = ' + money(T.supplyCost) + '. Almacenar costaría ' + money(T.hold) + ' y el marketing ' + money(T.mktCost) + '.', ''],
+      ['¿Qué ingresos y márgenes esperamos?', 'Ingresos: ' + money(T.revenue) + '. Margen bruto: ' + money(T.gm) + (T.marginPct !== null ? ' (' + pc(T.marginPct, 0) + ')' : '') + '. Utilidad tras almacenar, faltantes y marketing: ' + money(T.profit) + '.', T.profit > 0 ? 'Decisión: el plan es rentable.' : 'Decisión: revisa precio o costos.'],
+      ['¿Cuánto capital necesitaremos?', 'El capital inmovilizado máximo (inventario + pedidos en camino a costo) es ' + money(T.capital) + '.', 'Decisión: asegura ese financiamiento antes del primer pedido.'],
+      ['¿Cuánto cuesta un excedente frente a un faltante?', 'Guardar un ' + unit1 + ' extra cuesta ' + money(M.P.hold, 2) + ' por ' + p.l + '. No atender una venta cuesta ' + money(cu, 2) + ' (margen perdido' + (M.P.stockout > 0 ? ' + penalización' : '') + ')' + (ratio ? ': ' + f1(ratio) + ' veces más.' : '.'), ratio && ratio > 3 ? 'Decisión: conviene inclinarse por tener un poco de más.' : 'Decisión: el exceso y el faltante pesan parecido; apunta al equilibrio.']
+    ];
+    function area(cls, ttl, who, L) { return '<section class="card area ' + cls + '"><h3>' + ttl + '</h3><p class="sub" style="margin-bottom:12px">' + who + '</p>' + L.map(function (q) { return '<div class="qa"><div class="q">' + q[0] + '</div><div class="a">' + q[1] + '</div>' + (q[2] ? '<div class="dc">' + q[2] + '</div>' : '') + '</div>'; }).join('') + '</section>'; }
+    $('#a-areas').innerHTML = area('a1', 'Ventas y marketing', 'Quiere vender más, a buen precio.', A1) + area('a2', 'Operaciones y producción', 'Quiere un plan que la planta pueda cumplir.', A2) + area('a3', 'Inventarios y logística', 'Quiere servir sin inmovilizar de más.', A3) + area('a4', 'Finanzas', 'Quiere rentabilidad y caja bajo control.', A4);
+    var acts = [];
+    acts.push('<b>Plan:</b> ' + (produce ? 'producir' : 'comprar') + ' <b>' + f0(tot) + ' ' + esc(u) + '</b> en ' + H + ' ' + (H === 1 ? p.l : p.pl) + (firstIdx >= 0 ? ', empezando por ' + f0(M.sugg.produce[firstIdx] + M.sugg.buy[firstIdx]) + ' en el ' + p.l + ' ' + (firstIdx + 1) : '') + '.');
+    acts.push('<b>Inventario:</b> mantener al menos ' + f0(M.ss) + ' ' + esc(u) + ' de seguridad. Resultado esperado: ' + pc(T.fill, 0) + ' de la demanda atendida.');
+    if (shortCap) acts.push('<b>Capacidad:</b> el pico de ' + f0(peak) + ' supera ' + f0(cap) + '. Anticipa producción o amplía la capacidad.');
+    if (T.lost > 0.5) acts.push('<b>Riesgo:</b> aun así faltarían ' + f0(T.lost) + ' ' + esc(u) + '. Causa probable: ' + (M.sugg.unplaceable > 0.5 || shortCap ? 'capacidad insuficiente.' : M.P.L > 0 ? 'el lead time de ' + M.P.L + ' impide reponer a tiempo al inicio.' : 'inventario insuficiente.'));
+    acts.push('<b>Finanzas:</b> ' + money(T.revenue) + ' de ingresos, ' + money(T.profit) + ' de utilidad y ' + money(T.capital) + ' de capital inmovilizado.');
+    $('#a-sum').innerHTML = '<section class="card" style="border-top:5px solid var(--teal)"><h3>Qué se acuerda</h3><ul class="clean" style="font-size:15px">' + acts.map(function (a) { return '<li>' + a + '</li>'; }).join('') + '</ul></section>';
+  }
+};
+function num0(x) { return DL.num(x, 0); }
+
+/* ===== Etapa 4 (Ejecución) y Etapa 5 (Ajuste) ===== */
+function niceStep(max) { var s = max / 200; if (s >= 100) return Math.round(s / 100) * 100; if (s >= 10) return Math.round(s / 10) * 10; if (s >= 1) return Math.round(s); return 0.01; }
+function decDefaults(M) {
+  var b = S.biz, peak = Math.max.apply(null, M.D);
+  return { produceTotal: DL.sum(M.sugg.produce), buyTotal: DL.sum(M.sugg.buy), marketing: M.dm.mktBase, targetInv: M.ss, price: M.P.price0, capacity: (b.capacity === null || b.capacity === '' || b.capacity === undefined) ? Math.round(peak * 1.5) : DL.num(b.capacity, 0), serviceLevel: DL.num(b.serviceLevel, 95), leadTime: DL.num(b.leadTime, 0) };
+}
+function dctl(o) {
+  var key = o.key, d = S.biz.dec[key], cur = (d === null || d === undefined) ? o.def : d, id = 'x-' + key;
+  return '<div class="ctl-row"><div class="rtop"><label for="' + id + 'n">' + o.label + '</label><span class="sg" id="' + id + 's"></span></div><div class="rin"><input type="range" aria-label="' + esc(o.label) + ' (control deslizante)" data-k="dec.' + key + '" data-t="n" data-dkey="' + key + '" min="' + o.min + '" max="' + o.max + '" step="' + o.step + '" value="' + cur + '"><input type="number" id="' + id + 'n" data-k="dec.' + key + '" data-t="n" data-dkey="' + key + '" min="' + o.min + '" max="' + (o.hardMax || '') + '" step="' + o.step + '" value="' + (Math.round(cur * 100) / 100) + '"></div>' + (o.hint ? '<span class="small muted">' + o.hint + '</span>' : '') + '</div>';
+}
+ACT.resetdec = function () { Object.keys(S.biz.dec).forEach(function (k) { S.biz.dec[k] = null; }); _mk = null; var y = window.scrollY; go('ejecucion'); window.scrollTo(0, y); toast('Decisiones restablecidas al plan sugerido.'); };
+ACT.usesugg = function (el) { S.biz.dec[el.dataset.key] = null; _mk = null; syncDec(); touch(); };
+function syncDec() { var M = getM(); if (!M.ok || !$('#x-res')) return; var df = decDefaults(M); Object.keys(df).forEach(function (k) { var d = S.biz.dec[k]; var inputs = $$('[data-dkey="' + k + '"]'); inputs.forEach(function (i) { if (d === null || d === undefined) { if (document.activeElement !== i) i.value = (i.type === 'number') ? (Math.round(df[k] * 100) / 100) : df[k]; } }); var s = $('#x-' + k + 's'); if (s) s.innerHTML = (d === null || d === undefined) ? 'Sugerido por el plan' : '<span class="mod">Modificado</span> · <button type="button" data-act="usesugg" data-key="' + k + '">volver al sugerido (' + DL.fmt(df[k], df[k] < 10 ? 2 : 0) + ')</button>'; }); }
+
+V.ejecucion = {
+  mount: function (root) {
+    var M = getM(), b = S.biz; var h = stageHead(4, 'EJECUCIÓN', 'Tomar decisiones', 'Mueve cualquier decisión y mira de inmediato qué pasa con ventas, faltantes, inventario y utilidad. Empiezas desde el plan sugerido en Alineación.', '<button class="btn" data-act="resetdec">Restablecer al plan sugerido</button>');
+    if (!M.ok) { root.innerHTML = h + noData(M); return; }
+    var df = decDefaults(M), p = per(), sD = DL.sum(M.D), peak = Math.max.apply(null, M.D), u = b.unit;
+    var mx = Math.max(100, Math.ceil(Math.max(sD, df.produceTotal, df.buyTotal) * 2.2));
+    var ctl = dctl({ key: 'produceTotal', label: 'Cantidad a producir (total, ' + esc(u) + ')', min: 0, max: mx, step: niceStep(mx), def: df.produceTotal, hint: 'Se reparte siguiendo la forma del plan. Respeta la capacidad.' }) +
+      dctl({ key: 'buyTotal', label: 'Cantidad a comprar (total, ' + esc(u) + ')', min: 0, max: mx, step: niceStep(mx), def: df.buyTotal, hint: 'Llega tras el lead time y suma a la capacidad usada.' }) +
+      dctl({ key: 'marketing', label: 'Presupuesto de marketing (por ' + p.l + ', ' + esc(cur()) + ')', min: 0, max: Math.max(100, Math.ceil(df.marketing * 4)), step: niceStep(Math.max(100, df.marketing * 4)), def: df.marketing, hint: 'Cambia la demanda según la elasticidad publicitaria.' }) +
+      dctl({ key: 'targetInv', label: 'Nivel de inventario objetivo (' + esc(u) + ')', min: 0, max: Math.max(20, Math.ceil(Math.max(M.dBar * 4, M.ss * 3))), step: niceStep(Math.max(20, M.dBar * 4)), def: df.targetInv, hint: 'Inventario final que el plan intenta dejar en cada ' + p.l + '.' }) +
+      dctl({ key: 'capacity', label: 'Capacidad de producción o abastecimiento (por ' + p.l + ')', min: 0, max: Math.max(100, Math.ceil(Math.max(df.capacity, peak) * 2)), step: niceStep(Math.max(100, Math.max(df.capacity, peak) * 2)), def: df.capacity, hint: (b.capacity === null || b.capacity === '' ? 'Habías dejado «sin límite». Al mover este control defines un tope.' : '') }) +
+      dctl({ key: 'price', label: 'Precio de venta (' + esc(cur()) + ')', min: Math.round(df.price * 50) / 100, max: Math.round(df.price * 200) / 100, step: Math.max(0.01, Math.round(df.price) / 100), def: df.price, hint: 'Elasticidad precio-demanda: ' + f1(b.priceElasticity) + '.' }) +
+      dctl({ key: 'serviceLevel', label: 'Nivel de servicio objetivo (%)', min: 50, max: 99.9, step: 0.1, def: df.serviceLevel, hint: 'Sube el stock de seguridad.' }) +
+      dctl({ key: 'leadTime', label: 'Plazo de reposición (' + p.pl + ')', min: 0, max: 8, step: 1, def: df.leadTime, hint: 'Negocia con tu proveedor o cambia de fuente.' });
+    root.innerHTML = h + '<div class="grid split"><section class="card"><h3>Decisiones</h3><div class="stack" style="margin-top:14px;gap:18px">' + ctl + '</div></section><div class="stack"><div id="x-res"></div><section class="card"><h3>Alertas</h3><div id="x-alerts" style="margin-top:10px"></div></section><section class="card"><h3>Inventario proyectado con tus decisiones</h3><div id="x-chart" style="margin-top:10px"></div></section><section class="card"><h3>Balance por ' + p.l + '</h3><div id="x-tbl" style="margin-top:10px"></div></section>' + eduBox('Costo de oportunidad', '<p>Cada unidad que no vendes por falta de stock te cuesta su margen. Cada unidad de más te cuesta almacenarla y el capital inmovilizado. Decidir es elegir cuál error prefieres cometer.</p>') + '</div></div>';
+    $$('[data-dkey]').forEach(function (i) { i.addEventListener('input', function () { /* el delegado ya guardó */ }); });
+  },
+  update: function () {
+    var M = getM(), b = S.biz; if (!$('#x-res')) return;
+    if (!M.ok) { $('#main').innerHTML = noData(M); return; }
+    syncDec();
+    var p = per(), u = b.unit, T = M.sim.totals, rows = M.sim.rows, H = rows.length;
+    var excess = Math.max(0, T.endInv - (M.ss + M.dBar));
+    var cumLost = T.lost > 0.5, ok = T.fill >= 0.98;
+    $('#x-res').innerHTML = '<div class="kpis">' + kpi('Demanda esperada', f0(DL.sum(M.D)), u, M.dm.mult !== 1 ? 'Tus decisiones la cambian ' + (M.dm.mult > 1 ? '+' : '') + pc(M.dm.mult - 1) : 'En ' + H + ' ' + (H === 1 ? p.l : p.pl)) +
+      kpi('Ventas', f0(T.sales), u, 'Lo que realmente puedes entregar') + kpi('Cumplimiento', pc(T.fill, 1), '', 'Demanda atendida', ok ? 'ok' : (T.fill < 0.9 ? 'crit' : 'warn')) +
+      kpi('Faltantes', f0(T.lost), u, T.lost > 0.5 ? 'Margen perdido ' + money(T.lostMargin) : 'Sin ventas perdidas', cumLost ? 'crit' : 'ok') + kpi('Inventario final', f0(T.endInv), u, 'Stock de seguridad: ' + f0(M.ss)) +
+      kpi('Excedentes', f0(excess), u, excess > 0.5 ? 'Cuesta ' + money(excess * M.P.hold) + ' por ' + p.l : 'Sin exceso notable', excess > 0.5 ? 'warn' : '') +
+      kpi('Ingresos', money(T.revenue), '', 'Precio ' + money(M.P.price)) + kpi('Costos', money(T.cost), '', 'Ventas ' + money(T.cogs) + ' · almacén ' + money(T.hold) + (T.stockCost > 0 ? ' · faltantes ' + money(T.stockCost) : '') + (T.mktCost > 0 ? ' · marketing ' + money(T.mktCost) : '')) +
+      kpi('Margen estimado', money(T.profit), '', T.marginPct !== null ? 'Margen bruto ' + pc(T.marginPct, 0) : '', T.profit < 0 ? 'crit' : 'ok') + '</div>';
+    var al = DL.alerts(b, M); $('#x-alerts').innerHTML = alertsHTML(al);
+    var cats = rows.map(function (r) { return plabel(r.t, true); });
+    Charts.make($('#x-chart'), { title: 'Inventario proyectado', cats: cats, series: [{ name: 'Demanda', color: 'var(--s-hist)', data: rows.map(function (r) { return r.req; }) }, { name: 'Disponible', color: 'var(--s-base)', data: rows.map(function (r) { return r.avail; }) }, { name: 'Inventario final', short: 'Inv. final', type: 'area', color: 'var(--s-opt)', data: rows.map(function (r) { return r.end; }) }, { name: 'Stock de seguridad', short: 'Seguridad', color: 'var(--s-pes)', dash: '5 4', dots: false, w: 2, data: rows.map(function () { return M.ss; }) }], h: 280, yMin: 0 });
+    var h = '<div class="tw"><table><thead><tr><th>' + p.l.charAt(0).toUpperCase() + p.l.slice(1) + '</th><th>Inv. inicial</th><th>Recepciones</th><th>Demanda</th><th>Ventas</th><th>Faltante</th><th>Inv. final</th><th>Producido</th><th>Comprado</th><th>Capacidad usada</th></tr></thead><tbody>';
+    rows.forEach(function (r) { h += '<tr><td>' + plabel(r.t) + '</td><td>' + f0(r.begin) + '</td><td>' + f0(r.receipts) + '</td><td>' + f0(r.req) + '</td><td>' + f0(r.sales) + '</td><td class="' + (r.lost > 0.5 ? 'bad' : '') + '">' + (r.lost > 0.5 ? f0(r.lost) : '—') + '</td><td>' + f0(r.end) + '</td><td>' + (r.produce > 0.5 ? f0(r.produce) : '—') + '</td><td>' + (r.buy > 0.5 ? f0(r.buy) : '—') + '</td><td>' + (r.util === null ? '—' : pc(r.util, 0)) + '</td></tr>'; });
+    $('#x-tbl').innerHTML = h + '</tbody></table></div>';
+  }
+};
+
+/* ---------- ETAPA 5 · AJUSTE ---------- */
+ACT.advance = function () {
+  var M = getM(), A = DL.actualsAnalysis(S.biz, M), k = 0; while (k < A.rows.length && A.rows[k].done) k++;
+  if (k < 1) { toast('Ingresa al menos las ventas reales del primer período.'); return; }
+  var nb = DL.advance(S.biz, M, k, S.adjUseEst); S.store[S.biz.id] = nb; S.biz = nb; _mk = null; S.wi = null; save();
+  go('pronostico'); toast('Ciclo ' + nb.cycles + ' completo: se incorporaron ' + k + ' período(s). Revisa el nuevo pronóstico y sigue a Alineación y Ejecución.', 5200);
+};
+function cycleSVG(n) {
+  var names = ['Datos', 'Pronóstico', 'Alineación', 'Ejecución', 'Ajuste'], cx = 260, cy = 150, R = 105, pts = [], i;
+  for (i = 0; i < 5; i++) { var a = -Math.PI / 2 + i * 2 * Math.PI / 5; pts.push([cx + R * Math.cos(a), cy + R * Math.sin(a)]); }
+  var g = '<defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" style="fill:var(--ink2)"/></marker></defs>';
+  for (i = 0; i < 5; i++) { var p1 = pts[i], p2 = pts[(i + 1) % 5], dx = p2[0] - p1[0], dy = p2[1] - p1[1], L = Math.sqrt(dx * dx + dy * dy), ux = dx / L, uy = dy / L; g += '<path d="M' + (p1[0] + ux * 38) + ',' + (p1[1] + uy * 38) + 'L' + (p2[0] - ux * 40) + ',' + (p2[1] - uy * 40) + '" style="stroke:var(--ink2)" stroke-width="2" fill="none" marker-end="url(#ar)"/>'; }
+  pts.forEach(function (p, i) { var cur = i === 4; g += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="34" style="fill:' + (cur ? 'var(--navy)' : 'var(--surface)') + ';stroke:' + (cur ? 'var(--navy)' : 'var(--line2)') + '" stroke-width="2"/><text x="' + p[0] + '" y="' + (p[1] + 4) + '" text-anchor="middle" font-size="11.5" font-weight="600" style="fill:' + (cur ? 'var(--navy-ink)' : 'var(--ink)') + '">' + names[i] + '</text>'; });
+  g += '<text x="' + cx + '" y="' + (cy - 2) + '" text-anchor="middle" font-size="26" font-weight="800" style="fill:var(--teal-ink);font-family:var(--f-display)">Ciclo ' + (n + 1) + '</text><text x="' + cx + '" y="' + (cy + 16) + '" text-anchor="middle" font-size="12" style="fill:var(--muted)">' + (n ? n + ' completado' + (n > 1 ? 's' : '') : 'primer ciclo') + '</text>';
+  return '<svg viewBox="0 0 520 300" role="img" aria-label="Ciclo de mejora continua: Datos, Pronóstico, Alineación, Ejecución, Ajuste">' + g + '</svg>';
+}
+V.ajuste = {
+  mount: function (root) {
+    var M = getM(), b = S.biz, p = per();
+    var h = stageHead(5, 'AJUSTE', 'Aprender y replantear', 'Después de cada ' + p.l + ' compara lo que pasó con lo que esperabas. El error no es un fracaso: es la información que mejora el próximo pronóstico.');
+    if (!M.ok) { root.innerHTML = h + noData(M); return; }
+    var H = M.D.length; while (b.actuals.length < DL.MAXH) b.actuals.push({ real: null, stockout: false, endInv: null });
+    var rows = ''; for (var i = 0; i < H; i++) rows += '<tr><td>' + plabel(i + 1) + '</td><td id="j-fc' + i + '"></td><td><input type="number" inputmode="decimal" min="0" step="any" data-k="actuals.' + i + '.real" data-t="n" aria-label="Ventas reales ' + plabel(i + 1) + '" value="' + esc(fv(b.actuals[i].real)) + '"></td><td style="text-align:center"><input type="checkbox" data-k="actuals.' + i + '.stockout" data-t="b" aria-label="Se agotó el inventario ' + plabel(i + 1) + '"' + (b.actuals[i].stockout ? ' checked' : '') + '></td><td><input type="number" inputmode="decimal" min="0" step="any" data-k="actuals.' + i + '.endInv" data-t="n" aria-label="Inventario final real ' + plabel(i + 1) + '" value="' + esc(fv(b.actuals[i].endInv)) + '"></td><td id="j-sim' + i + '"></td><td id="j-err' + i + '"></td><td id="j-pct' + i + '"></td><td id="j-st' + i + '"></td></tr>';
+    root.innerHTML = h + '<div class="grid split wide"><div class="stack"><section class="card"><div class="hd"><div><h3>Pronóstico frente a realidad</h3><p class="sub">Ingresa las ventas reales de los primeros períodos, en orden. Marca «Se agotó» si te quedaste sin stock.</p></div></div><div class="tw"><table><thead><tr><th>' + p.l.charAt(0).toUpperCase() + p.l.slice(1) + '</th><th>Pronóstico</th><th>Ventas reales</th><th>Se agotó</th><th>Inv. final real</th><th>Inv. final simulado</th><th>Error</th><th>Error %</th><th>Estado</th></tr></thead><tbody>' + rows + '</tbody></table></div><p class="small muted" style="margin-top:8px">Error = real − pronóstico (positivo: vendiste más de lo esperado). El error % se omite si no hay ventas, para no dividir por cero.</p></section><div id="j-kpi"></div><section class="card"><h3>Evolución del error de pronóstico</h3><div id="j-chart" style="margin-top:10px"></div></section></div>' +
+      '<div class="stack"><section class="card cycle"><h3>Ciclo de mejora continua</h3><div style="margin:10px 0">' + cycleSVG(b.cycles || 0) + '</div><div class="row" style="margin:6px 0"><label class="sw"><input type="checkbox" id="j-est" ' + (S.adjUseEst ? 'checked' : '') + '><i></i></label><label for="j-est" class="small" style="font-weight:600">Si hubo faltantes, usar la demanda estimada y no solo las ventas observadas</label></div><div id="j-adv"></div></section>' + eduBox('Ventas observadas ≠ demanda', '<p>Si te quedaste sin stock, vendiste todo lo que tenías, pero había más clientes. Si alimentas el pronóstico solo con ventas observadas, aprendes a vender menos cada vez. Por eso se estima la demanda perdida.</p>') + '</div></div>';
+    var est = $('#j-est'); est.addEventListener('input', function () { S.adjUseEst = est.checked; save(); V.ajuste.update(); });
+  },
+  update: function () {
+    var M = getM(), b = S.biz; if (!$('#j-kpi')) return;
+    if (!M.ok) { $('#main').innerHTML = noData(M); return; }
+    var A = DL.actualsAnalysis(b, M), p = per(), u = b.unit;
+    A.rows.forEach(function (r, i) {
+      $('#j-fc' + i).textContent = f0(r.fc); $('#j-sim' + i).textContent = f0(r.sim.end);
+      var e = $('#j-err' + i), pt = $('#j-pct' + i), st = $('#j-st' + i);
+      if (!r.done) { e.textContent = '—'; pt.textContent = '—'; st.innerHTML = ''; e.className = ''; return; }
+      e.textContent = (r.err > 0 ? '+' : '') + f0(r.err); e.className = Math.abs(r.err) > 0.15 * Math.max(r.real, 1) ? 'bad' : 'good'; pt.textContent = r.pct === null ? 'n/d' : (r.pct > 0 ? '+' : '') + pc(r.pct, 0);
+      st.innerHTML = r.stock ? '<span class="tag warn" title="Las ventas observadas pueden subestimar la demanda">Demanda censurada · ~' + f0(r.estLost) + ' perdidas</span>' : '<span class="tag ok">Observada</span>';
+    });
+    var h = '';
+    if (!A.n) h = '<div class="callout">Ingresa las ventas reales del primer período para medir el error y ver cómo se ajusta tu pronóstico.</div>';
+    else {
+      h = '<div class="kpis">' + kpi('Períodos comparados', A.n, '', '') + kpi('MAE', f1(A.mae), u, 'Error absoluto promedio') + kpi('WAPE', A.wape === null ? '—' : pc(A.wape, 1), '', 'Σ|error| / Σ ventas', A.wape !== null && A.wape > 0.25 ? 'warn' : 'ok') +
+        kpi('Sesgo', A.bias === null ? '—' : (A.bias > 0 ? '+' : '') + pc(A.bias, 1), '', A.bias === null ? '' : (A.bias > 0.05 ? 'Tiendes a sobreestimar' : A.bias < -0.05 ? 'Tiendes a subestimar' : 'Sin sesgo marcado'), A.bias !== null && Math.abs(A.bias) > 0.1 ? 'warn' : '') + kpi('Ventas perdidas estimadas', f0(A.lostEst), u, A.lostEst > 0 ? 'Margen no capturado ' + money(A.lostEst * (M.P.price - M.P.cost)) : 'Sin faltantes declarados', A.lostEst > 0 ? 'warn' : '') + '</div>';
+      var invRows = A.rows.filter(function (r) { return r.done && r.endInv !== null; });
+      if (invRows.length) { var dif = invRows.map(function (r) { return r.endInv - r.sim.end; }); h += '<div class="callout" style="margin-top:12px"><b>Desempeño operativo.</b> Tu inventario real terminó en promedio ' + f0(Math.abs(DL.mean(dif))) + ' ' + esc(u) + (DL.mean(dif) >= 0 ? ' por encima' : ' por debajo') + ' de lo simulado. ' + (DL.mean(dif) < 0 ? 'Vendiste más rápido de lo planeado o recibiste menos.' : 'Vendiste menos de lo esperado o recibiste más.') + '</div>'; }
+      if (A.censored) h += '<div class="callout warn" style="margin-top:12px"><b>Atención: demanda censurada.</b> En ' + A.censored + ' período(s) te quedaste sin inventario. Las ventas observadas pueden <b>subestimar</b> la demanda real, así que el error medido es optimista. Estimamos la demanda como el mayor entre lo vendido y lo pronosticado.</div>';
+      if (A.bias !== null && A.n >= 2 && Math.abs(A.bias) > 0.1) h += '<div class="callout warn" style="margin-top:12px"><b>Sesgo sostenido.</b> Con ' + A.n + ' períodos de diferencia en la misma dirección conviene cambiar el método (por ejemplo, un α mayor) o revisar los supuestos externos.</div>';
+    }
+    $('#j-kpi').innerHTML = h;
+    var k = 0; while (k < A.rows.length && A.rows[k].done) k++;
+    var gap = A.rows.some(function (r, i) { return r.done && i >= k; });
+    $('#j-adv').innerHTML = '<p class="small ink2" style="margin-bottom:8px">Actualizar los datos → recalcular el pronóstico → ajustar el plan → ejecutar de nuevo.</p>' + (gap ? '<div class="callout warn small" style="margin-bottom:8px">Hay un período sin dato antes de otros ya ingresados. Completa los períodos en orden.</div>' : '') + '<button class="btn teal" data-act="advance"' + (k < 1 ? ' disabled' : '') + '>' + (k < 1 ? 'Ingresa ventas reales para avanzar' : 'Incorporar ' + k + ' ' + (k === 1 ? p.l : p.pl) + ' y recalcular') + '</button>';
+    var cats = [], vals = [], fcs = [];
+    (b.errorLog || []).forEach(function (e) { cats.push('C' + e.cycle + '·' + e.t); vals.push(e.real - e.fc); });
+    A.rows.forEach(function (r) { if (r.done) { cats.push('Ahora·' + r.t); vals.push(r.err); } });
+    var bt = M.F.res[M.methodId] || M.F.res.m2, pre = [];
+    if (bt && bt.errs.length) bt.errs.slice(-8).forEach(function (e) { pre.push(['H' + (e.i + 1 - M.n), e.err]); });
+    var cc = pre.map(function (x) { return x[0].replace('-', '−'); }).concat(cats), vv = pre.map(function (x) { return x[1]; }).concat(vals);
+    if (!vv.length) $('#j-chart').innerHTML = '<p class="small muted">Aún no hay errores medidos. Con más historial verás el error histórico; con ventas reales, el de cada ciclo.</p>';
+    else Charts.make($('#j-chart'), { title: 'Evolución del error', cats: cc, series: [{ name: 'Error (real − pronóstico)', short: 'Error', type: 'bar', color: 'var(--s-base)', data: vv }], h: 220, yMin: Math.min(0, Math.min.apply(null, vv) * 1.1), direct: false });
+  }
+};
+
+/* ===== Dashboard, WHAT IF?, asistente, aprendizaje, exportación e inicio ===== */
+function needM() { var M = getM(); return M; }
+function mkHistSeries(M) {
+  var H = M.D.length, n = M.n, fut = function (a) { return nullsN(n).concat(a); };
+  return { cats: catsAll(M), series: [{ name: 'Ventas históricas', short: 'Históricas', color: 'var(--s-hist)', data: M.y.concat(nullsN(H)) }, { name: 'Escenario base', short: 'Base', color: 'var(--s-base)', w: 3, data: fut(M.proj) }, { name: 'Optimista', color: 'var(--s-opt)', dash: '6 4', dots: false, data: fut(M.opt) }, { name: 'Pesimista', color: 'var(--s-pes)', dash: '6 4', dots: false, data: fut(M.pes) }], bands: [{ name: 'Rango orientativo', lo: fut(M.pes), hi: fut(M.opt), color: 'var(--s-base)', opacity: .12 }] };
+}
+function errSeries(M) {
+  var b = S.biz, bt = M.F.res[M.methodId] || M.F.res.m2, cats = [], vals = [];
+  if (bt && bt.errs) bt.errs.forEach(function (e) { cats.push(plabel(e.i + 1, true)); vals.push(e.err); });
+  (b.errorLog || []).forEach(function (e) { cats.push('C' + e.cycle + '·' + e.t); vals.push(e.real - e.fc); });
+  return { cats: cats, vals: vals };
+}
+
+V.dashboard = {
+  mount: function (root) {
+    root.innerHTML = stageHead(0, 'TABLERO', 'Dashboard ejecutivo', 'Los indicadores principales del plan actual (método y decisiones vigentes). Todo se actualiza al cambiar los datos.') +
+      '<div id="k-cards"></div><div class="grid g2" style="margin-top:18px"><section class="card"><h3>Ventas históricas vs. pronóstico</h3><div id="k-c1" style="margin-top:10px"></div></section><section class="card"><h3>Demanda vs. capacidad</h3><div id="k-c2" style="margin-top:10px"></div></section><section class="card"><h3>Inventario proyectado</h3><div id="k-c3" style="margin-top:10px"></div></section><section class="card"><h3>Comparación de escenarios</h3><p class="sub">Tu plan actual enfrentado a una demanda pesimista, base y optimista.</p><div id="k-c4" style="margin-top:10px"></div></section><section class="card"><h3>Evolución del error de pronóstico</h3><div id="k-c5" style="margin-top:10px"></div></section><section class="card"><h3>Lo más importante ahora</h3><div id="k-ins" style="margin-top:10px"></div></section></div>';
+  },
+  update: function () {
+    var M = needM(), b = S.biz; if (!$('#k-cards')) return;
+    if (!M.ok) { $('#main').innerHTML = noData(M); return; }
+    var p = per(), u = b.unit, T = M.sim.totals, H = M.D.length, rows = M.sim.rows;
+    var wape = M.F.res[M.methodId] && M.F.evalPoints >= 4 ? M.F.res[M.methodId].wape : null;
+    $('#k-cards').innerHTML = '<div class="kpis">' + kpi('Demanda proyectada', f0(DL.sum(M.D)), u, H + ' ' + (H === 1 ? p.l : p.pl) + ' · ' + M.rec.names[M.methodId]) + kpi('Ventas estimadas', f0(T.sales), u, 'Con las decisiones vigentes') + kpi('Inventario disponible', f0(M.inv0), u, f1(M.coverPeriods) + ' ' + p.pl + ' de cobertura') +
+      kpi('Stock de seguridad', f0(M.ss), u, 'Nivel de servicio ' + f1(M.P.sl) + ' %') + kpi('Necesidad de reposición', f0(M.needNow), u, 'Para llegar a S = ' + f0(M.S), M.needNow > 0.5 ? 'warn' : 'ok') + kpi('Capacidad utilizada', T.capUsed === null ? 'n/d' : pc(T.capUsed, 0), '', T.capUsed === null ? 'Sin capacidad definida' : 'Promedio del horizonte', T.capUsed !== null && T.capUsed > 0.95 ? 'warn' : '') +
+      kpi('Nivel de servicio esperado', pc(T.fill, 1), '', 'Demanda atendida', T.fill < 0.9 ? 'crit' : T.fill < 0.98 ? 'warn' : 'ok') + kpi('Ingresos proyectados', money(T.revenue), '', '') + kpi('Margen estimado', money(T.profit), '', T.marginPct !== null ? 'Margen bruto ' + pc(T.marginPct, 0) : '', T.profit < 0 ? 'crit' : '') +
+      kpi('Error histórico (WAPE)', wape === null ? 'n/d' : pc(wape, 1), '', wape === null ? 'Datos insuficientes (' + M.F.evalPoints + ' evaluables)' : 'Sobre ' + M.F.evalPoints + ' ' + p.pl) + '</div>';
+    var h1 = mkHistSeries(M); Charts.make($('#k-c1'), { title: 'Ventas históricas vs pronóstico', cats: h1.cats, series: h1.series, bands: h1.bands, split: M.n, splitLabel: 'Hoy →', h: 270, yMin: 0 });
+    var cap = M.P.cap, cats = rows.map(function (r) { return plabel(r.t, true); });
+    var s2 = [{ name: 'Demanda', type: 'bar', color: 'var(--s-hist)', data: rows.map(function (r) { return r.req; }) }, { name: 'Abastecido', short: 'Abastecido', type: 'bar', color: 'var(--s-base)', data: rows.map(function (r) { return r.placed; }) }];
+    if (isFinite(cap)) s2.push({ name: 'Capacidad', color: 'var(--s-pes)', dash: '6 4', dots: false, w: 2.5, data: rows.map(function () { return cap; }) });
+    Charts.make($('#k-c2'), { title: 'Demanda vs capacidad', cats: cats, series: s2, h: 270, yMin: 0 });
+    Charts.make($('#k-c3'), { title: 'Inventario proyectado', cats: cats, series: [{ name: 'Inventario final', short: 'Inv. final', type: 'area', color: 'var(--s-opt)', data: rows.map(function (r) { return r.end; }) }, { name: 'Stock de seguridad', short: 'Seguridad', color: 'var(--s-pes)', dash: '5 4', dots: false, w: 2, data: rows.map(function () { return M.ss; }) }], h: 270, yMin: 0 });
+    var sc = [M.simPes.totals, M.sim.totals, M.simOpt.totals];
+    Charts.make($('#k-c4'), { title: 'Comparación de escenarios', cats: ['Pesimista', 'Base', 'Optimista'], series: [{ name: 'Demanda total', type: 'bar', color: 'var(--s-hist)', data: sc.map(function (t) { return t.req; }) }, { name: 'Ventas atendidas', short: 'Atendidas', type: 'bar', color: 'var(--s-base)', data: sc.map(function (t) { return t.sales; }) }], h: 270, yMin: 0, direct: false });
+    var es = errSeries(M);
+    if (!es.vals.length) $('#k-c5').innerHTML = '<p class="small muted">Aún no hay períodos evaluables. Con más historial, o con ventas reales en la etapa Ajuste, verás el error aquí.</p>';
+    else Charts.make($('#k-c5'), { title: 'Evolución del error', cats: es.cats, series: [{ name: 'Error (real − pronóstico)', short: 'Error', type: 'bar', color: 'var(--s-base)', data: es.vals }], h: 270, yMin: Math.min(0, Math.min.apply(null, es.vals) * 1.1), direct: false });
+    var ins = DL.insights(b, M).slice(0, 3);
+    $('#k-ins').innerHTML = '<ul class="clean">' + ins.map(function (i) { return '<li><b>' + esc(i.t) + '.</b> ' + esc(i.m) + '</li>'; }).join('') + '</ul><div class="row" style="margin-top:12px"><button class="btn" data-act="go" data-v="asistente">Ver todas las recomendaciones</button></div>';
+  }
+};
+
+/* ---------- WHAT IF ---------- */
+function wiDefault() { return { demand: 0, mkt: 0, campCost: 0, delay: 0, cost: 0, price: 0, cap: 0, slOn: false, sl: 95, replan: false, preset: '' }; }
+function wiOv(w) { var o = { demandMult: (1 + w.demand / 100) * (1 + w.mkt / 100), mktExtra: w.campCost, extraDelay: w.delay, costMult: 1 + w.cost / 100, priceMult: 1 + w.price / 100, capMult: 1 + w.cap / 100, replan: w.replan }; if (w.slOn) o.serviceLevel = w.sl; return o; }
+var WI_PRE = [['d30', '¿Demanda +30 %?', { demand: 30 }], ['late', '¿Proveedor se retrasa 2 períodos?', { delay: 2 }], ['camp', '¿Campaña que sube ventas 15 %?', { mkt: 15, camp: 1 }], ['cost', '¿Suben los costos 15 %?', { cost: 15 }], ['d25', '¿Demanda cae 25 %?', { demand: -25 }], ['sl95', '¿Nivel de servicio de 95 %?', { slOn: true, sl: 95, replan: true }], ['capfix', '¿Capacidad fija y demanda +30 %?', { demand: 30, cap: 0, replan: true }]];
+ACT.wipre = function (el) {
+  var M = getM(); if (!M.ok) return; var pr = WI_PRE.filter(function (x) { return x[0] === el.dataset.id; })[0], w = wiDefault(); Object.assign(w, pr[2]); w.preset = pr[0];
+  if (w.camp) w.campCost = Math.round(M.sim.totals.revenue / M.D.length * 0.03);
+  S.wi = w; remount();
+};
+ACT.wireset = function () { S.wi = wiDefault(); remount(); };
+function wsl(key, label, min, max, step, unit) { var w = S.wi; return '<div class="ctl-row"><div class="rtop"><label for="w-' + key + 'n">' + label + '</label><b id="w-' + key + 'v"></b></div><div class="rin"><input type="range" aria-label="' + esc(label) + ' (control deslizante)" data-w="' + key + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + w[key] + '"><input type="number" id="w-' + key + 'n" data-w="' + key + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + w[key] + '"></div></div>'; }
+V.whatif = {
+  mount: function (root) {
+    if (!S.wi) S.wi = wiDefault();
+    var M = getM(), p = per(), w = S.wi, h = stageHead(0, 'LABORATORIO', 'WHAT IF? Laboratorio de decisiones', 'Cambia una condición y compara tu plan actual con el escenario modificado. Es un ejercicio hipotético para pensar, no un pronóstico estadístico.', '<button class="btn" data-act="wireset">Restablecer</button>');
+    if (!M.ok) { root.innerHTML = h + noData(M); return; }
+    root.innerHTML = h + '<div class="presets" role="group" aria-label="Escenarios rápidos" style="margin-bottom:16px">' + WI_PRE.map(function (x) { return '<button class="chip" data-act="wipre" data-id="' + x[0] + '" aria-pressed="' + (w.preset === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="grid split"><section class="card"><h3>Variables del escenario</h3><div class="stack" style="margin-top:14px;gap:16px">' + wsl('demand', 'Cambio en la demanda (%)', -60, 60, 1) + wsl('mkt', 'Efecto de una campaña publicitaria (% de ventas)', 0, 40, 1) + wsl('campCost', 'Costo de la campaña (' + esc(cur()) + ' por ' + p.l + ')', 0, Math.max(100, Math.round(M.sim.totals.revenue / M.D.length * 0.3)), Math.max(1, Math.round(M.sim.totals.revenue / M.D.length / 100)), '') + wsl('delay', 'Retraso adicional del proveedor (' + p.pl + ')', 0, 4, 1) + wsl('cost', 'Cambio en el costo unitario (%)', -30, 60, 1) + wsl('price', 'Cambio en el precio (%)', -30, 30, 1) + wsl('cap', 'Cambio en la capacidad (%)', -60, 60, 1) +
+      '<div class="ctl-row"><div class="row"><label class="sw"><input type="checkbox" id="w-slon" data-w="slOn" data-wb="1"' + (w.slOn ? ' checked' : '') + '><i></i></label><label for="w-slon" style="font-weight:600;font-size:14px">Cambiar nivel de servicio objetivo</label></div><div class="rin" style="margin-top:6px"><input type="range" aria-label="Nivel de servicio (control deslizante)" data-w="sl" min="50" max="99.9" step="0.1" value="' + w.sl + '"><input type="number" aria-label="Nivel de servicio" data-w="sl" min="50" max="99.9" step="0.1" value="' + w.sl + '"></div></div>' +
+      '<div class="row"><label class="sw"><input type="checkbox" id="w-rp" data-w="replan" data-wb="1"' + (w.replan ? ' checked' : '') + '><i></i></label><label for="w-rp" style="font-weight:600;font-size:14px">La empresa replanifica ante el cambio</label></div><p class="small muted">Apagado: el plan queda fijo y el evento lo sorprende. Encendido: la empresa recalcula producción y compras.</p></div></section>' +
+      '<div class="stack"><div class="callout warn"><b>Escenario hipotético.</b> Las cifras salen de multiplicar tu plan por los cambios que elijas. No son predicciones ni tienen probabilidad asociada.</div><div id="w-sum"></div><div class="compare" id="w-cmp"></div><section class="card"><h3>Inventario final por ' + p.l + '</h3><div id="w-chart" style="margin-top:10px"></div></section></div></div>';
+  },
+  update: function () {
+    var M = getM(), w = S.wi; if (!$('#w-cmp') || !M.ok || !w) return;
+    var b = S.biz, p = per(), u = b.unit, sc = DL.scenario(b, wiOv(w)), A = sc.base, B = sc.mod, ta = A.sim.totals, tb = B.sim.totals;
+    ['demand', 'mkt', 'campCost', 'delay', 'cost', 'price', 'cap'].forEach(function (k) { var e = $('#w-' + k + 'v'); if (e) e.textContent = (w[k] > 0 && ['campCost', 'delay'].indexOf(k) < 0 ? '+' : '') + w[k] + (['campCost'].indexOf(k) >= 0 ? ' ' + cur() : k === 'delay' ? ' ' + p.pl : ' %'); });
+    var items = [['Ingresos', ta.revenue, tb.revenue, money, 1], ['Costos totales', ta.cost, tb.cost, money, -1], ['Inventario final', ta.endInv, tb.endInv, f0, 0], ['Rentabilidad (utilidad)', ta.profit, tb.profit, money, 1], ['Demanda no atendida', ta.lost, tb.lost, f0, -1], ['Nivel de servicio', ta.fill * 100, tb.fill * 100, function (x) { return DL.fmt(x, 1) + ' %'; }, 1]];
+    $('#w-cmp').innerHTML = items.map(function (it) {
+      var mx = Math.max(Math.abs(it[1]), Math.abs(it[2]), 1e-9), d = it[2] - it[1], cls = Math.abs(d) < 1e-6 ? '' : (it[4] === 0 ? '' : (d * it[4] > 0 ? 'good' : 'bad'));
+      return '<div class="cmpc"><div class="k">' + it[0] + '</div><div class="bar"><span>Actual</span><span class="tr"><i style="width:' + Math.max(2, Math.abs(it[1]) / mx * 100) + '%;background:var(--s-hist)"></i></span><span>' + it[3](it[1]) + '</span></div><div class="bar"><span>Escenario</span><span class="tr"><i style="width:' + Math.max(2, Math.abs(it[2]) / mx * 100) + '%;background:var(--s-opt)"></i></span><span>' + it[3](it[2]) + '</span></div><div class="dl2 ' + (cls === 'good' ? 'ink2' : '') + '" style="color:' + (cls === 'good' ? 'var(--teal-ink)' : cls === 'bad' ? 'var(--coral-ink)' : 'var(--ink2)') + '">' + (Math.abs(d) < 1e-6 ? 'Sin cambio' : (d > 0 ? '▲ +' : '▼ −') + it[3](Math.abs(d)).replace(/^−/, '')) + '</div></div>';
+    }).join('');
+    var msg = [];
+    if (tb.lost > ta.lost + 0.5) msg.push('El escenario deja <b>' + f0(tb.lost - ta.lost) + ' ' + esc(u) + '</b> más sin atender (' + money((tb.lost - ta.lost) * (B.P.price - B.P.cost)) + ' de margen).');
+    if (tb.endInv > ta.endInv + 0.5 && tb.endInv > B.ss + B.dBar) msg.push('Terminas con <b>' + f0(tb.endInv - ta.endInv) + ' ' + esc(u) + '</b> más de inventario: capital inmovilizado de ' + money((tb.endInv - ta.endInv) * B.P.cost) + '.');
+    if (tb.profit < ta.profit - 1e-6) msg.push('La utilidad baja ' + money(ta.profit - tb.profit) + '.'); else if (tb.profit > ta.profit + 1e-6) msg.push('La utilidad sube ' + money(tb.profit - ta.profit) + '.');
+    if (w.replan && w.slOn) msg.push('Con replanificación, el stock de seguridad pasa de ' + f0(A.ss) + ' a ' + f0(B.ss) + ' ' + esc(u) + ' y exige más capital de trabajo (' + money(tb.capital) + ' vs ' + money(ta.capital) + ').');
+    if (!msg.length) msg.push('Mueve los controles o elige un escenario rápido para comparar.');
+    $('#w-sum').innerHTML = '<section class="card"><h3>Qué cambia</h3><ul class="clean">' + msg.map(function (m) { return '<li>' + m + '</li>'; }).join('') + '</ul></section>';
+    var cats = A.sim.rows.map(function (r) { return plabel(r.t, true); });
+    Charts.make($('#w-chart'), { title: 'Inventario final: actual vs escenario', cats: cats, series: [{ name: 'Actual', color: 'var(--s-hist)', data: A.sim.rows.map(function (r) { return r.end; }) }, { name: 'Escenario', color: 'var(--s-opt)', data: B.sim.rows.map(function (r) { return r.end; }) }, { name: 'Demanda del escenario', short: 'Demanda esc.', color: 'var(--s-pes)', dash: '5 4', dots: false, data: B.sim.rows.map(function (r) { return r.req; }) }], h: 250, yMin: 0 });
+  }
+};
+
+/* ---------- ¿Qué nos dicen los datos? ---------- */
+V.asistente = {
+  mount: function (root) { root.innerHTML = stageHead(0, 'ASISTENTE', '¿Qué nos dicen los datos?', 'Entre tres y cinco recomendaciones, calculadas con reglas simples sobre tus propias cifras. No es un modelo de inteligencia artificial: cada afirmación se puede verificar.') + '<div class="grid split wide"><div id="s-list" class="stack"></div><div class="stack"><section class="card"><h3>Cifras que usa el asistente</h3><div id="s-facts" style="margin-top:10px"></div></section>' + eduBox('Cómo leer una recomendación', '<p>Cada recomendación sale de una regla del tipo «si la demanda máxima supera la capacidad, entonces…». Si no estás de acuerdo, mira la cifra que la disparó: puede que un supuesto tuyo deba cambiar.</p>') + '</div></div>'; },
+  update: function () {
+    var M = getM(), b = S.biz; if (!$('#s-list')) return;
+    if (!M.ok) { $('#main').innerHTML = noData(M); return; }
+    var ins = DL.insights(b, M), p = per(), T = M.sim.totals, u = b.unit;
+    $('#s-list').innerHTML = ins.map(function (i, k) { var cls = i.p <= 1 ? 'crit' : i.p === 2 ? 'warn' : 'info'; return '<section class="card"><div class="row"><span class="tag ' + cls + '">' + (i.p <= 1 ? 'Prioridad alta' : i.p === 2 ? 'Prioridad media' : 'Para tener en cuenta') + '</span></div><h3 style="margin-top:8px">' + esc(i.t) + '</h3><p class="ink2" style="margin-top:4px;font-size:15.5px">' + esc(i.m) + '</p></section>'; }).join('');
+    var rs = M.F.res[M.methodId];
+    var rows = [['Demanda media proyectada', f0(M.dBar) + ' ' + u + ' por ' + p.l], ['Pico de demanda', f0(Math.max.apply(null, M.D)) + ' ' + u], ['Capacidad', isFinite(M.P.cap) ? f0(M.P.cap) + ' por ' + p.l : 'Sin límite'], ['Cobertura de inventario', isFinite(M.coverPeriods) ? f1(M.coverPeriods) + ' ' + p.pl : '—'], ['Stock de seguridad', f0(M.ss) + ' ' + u], ['Cumplimiento esperado', pc(T.fill, 1)], ['Margen bruto', T.marginPct === null ? '—' : pc(T.marginPct, 0)], ['WAPE histórico', rs && M.F.evalPoints >= 4 && rs.wape !== null ? pc(rs.wape, 1) : 'Datos insuficientes'], ['Sesgo histórico', rs && M.F.evalPoints >= 4 && rs.bias !== null ? (rs.bias > 0 ? '+' : '') + pc(rs.bias, 1) : 'Datos insuficientes']];
+    $('#s-facts').innerHTML = '<div class="tw"><table><tbody>' + rows.map(function (r) { return '<tr><td>' + r[0] + '</td><td><b>' + r[1] + '</b></td></tr>'; }).join('') + '</tbody></table></div>';
+  }
+};
+
+/* ---------- Aprender ---------- */
+function glossary() {
+  var b = S.biz || DL.newBiz(), M = (S.started && getM().ok) ? getM() : null, u = b.unit || 'unidades', p = DL.PERIODS[b.period || 'semanal'];
+  var ex = function (a, c) { return M ? c : a; };
+  return [
+    ['Pronóstico de demanda', 'Estimación de cuánto querrán comprar tus clientes en los próximos períodos. Sirve para decidir, no para adivinar.', ex('Si en las últimas 4 semanas vendiste 100, 110, 105 y 115, un pronóstico razonable ronda 108.', 'En tu caso, el próximo ' + p.l + ' se proyecta en ' + f0(M && M.proj[0]) + ' ' + u + '.')],
+    ['Promedio móvil', 'Promedia las últimas k observaciones. Suaviza el ruido, pero reacciona lento si la demanda cambia.', 'Con k = 3 y ventas de 100, 110 y 120, el pronóstico es 110, aunque la tendencia apunta a 130.'],
+    ['Estacionalidad', 'Patrón que se repite en el tiempo: fines de semana, vacaciones, diciembre.', 'Una panadería vende 30 % más los sábados. Ignorarlo lleva a sobrar el lunes y faltar el sábado.'],
+    ['Error de pronóstico', 'Diferencia entre lo real y lo pronosticado. Se resume con MAE (promedio en unidades) y WAPE (proporción de lo vendido).', 'Pronosticaste 100 y vendiste 120: error de +20. Si en total fallas 50 sobre 500 vendidas, WAPE = 10 %.'],
+    ['Sesgo', 'Tendencia a equivocarse siempre en la misma dirección. Un sesgo positivo indica sobreestimación.', 'Si siempre pronosticas 8 % de más, compras de más cada vez, aunque el error «promedio» parezca pequeño.'],
+    ['Stock de seguridad', 'Colchón de inventario para absorber variaciones de la demanda y del proveedor. SS = z × σ × √(L + 1).', ex('Con σ = 20, L = 1 y z = 1,64 (95 %), SS ≈ 46 unidades.', 'Tu stock de seguridad es ' + f0(M && M.ss) + ' ' + u + ', para un nivel de servicio de ' + f1(M && M.P.sl) + ' %.')],
+    ['Lead time', 'Tiempo entre decidir un pedido y tenerlo disponible. Durante ese tiempo solo cuentas con lo que ya tienes.', 'Si tu proveedor tarda 2 semanas, el pedido de hoy no ayuda a vender esta semana ni la próxima.'],
+    ['Nivel de servicio', 'Probabilidad objetivo de no quedarte sin stock. Subirlo cuesta cada vez más: pasar de 95 % a 99 % exige mucho más colchón.', 'El factor z de 90 %, 95 % y 99 % es 1,28, 1,64 y 2,33.'],
+    ['Capacidad productiva', 'Máximo que puedes producir o abastecer por período. Si la demanda la supera, hay ventas perdidas, salvo que anticipes producción.', ex('Capacidad de 800 con demanda de 1.100 deja 300 sin atender.', isFinite(M && M.P.cap) ? 'Tu capacidad es ' + f0(M.P.cap) + ' por ' + p.l + '.' : 'No definiste capacidad.')],
+    ['Planificación S&OP', 'Proceso en el que ventas, operaciones, inventarios y finanzas acuerdan un solo plan a partir del mismo pronóstico.', 'Marketing quiere una promoción; operaciones avisa que no hay capacidad. En el S&OP se decide junto.'],
+    ['Costo de oportunidad', 'Lo que dejas de ganar por la opción que no elegiste. Un faltante cuesta el margen de la venta perdida.', ex('Si ganas 4 por unidad y pierdes 50 ventas, el costo de oportunidad es 200.', M ? 'Cada ' + u.replace(/s$/, '') + ' no vendida te cuesta ' + money(M.P.price - M.P.cost) + ' de margen.' : ''), '']
+  ];
+}
+var REFL = [
+  ['¿Qué riesgos existen si proyectamos una demanda demasiado alta?', 'Compras o produces de más: inventario excesivo, capital inmovilizado, costos de almacenamiento y, en perecederos, merma. También puede llevar a promociones forzadas para liquidar.'],
+  ['¿Qué ocurre si proyectamos una demanda demasiado baja?', 'Faltantes y ventas perdidas, clientes que migran a la competencia y capacidad insuficiente en los picos. Además, las ventas observadas bajan y el siguiente pronóstico se contagia.'],
+  ['¿Es mejor tener inventario sobrante o perder ventas?', 'Depende del costo de cada error. Si el margen es alto y almacenar es barato, conviene sobrar un poco. Si el producto caduca o el capital es escaso, conviene lo contrario. Compara el costo de un faltante con el de guardar una unidad.'],
+  ['¿Cómo pueden marketing y operaciones tomar decisiones contradictorias?', 'Marketing lanza una promoción que sube la demanda sin avisar a operaciones, que no tiene capacidad ni inventario. O al revés: operaciones reduce producción para bajar costos justo antes de una campaña. El S&OP existe para evitarlo.'],
+  ['¿Por qué una empresa necesita revisar continuamente sus pronósticos?', 'Porque la realidad cambia: competidores, clima, precios, gustos. Comparar lo pronosticado con lo real revela sesgos y quiebres, y cada ciclo mejora el siguiente plan.']
+];
+V.aprender = {
+  mount: function (root) {
+    var g = glossary();
+    root.innerHTML = stageHead(0, 'MODO EDUCATIVO', '¿Por qué sucede esto?', 'Conceptos clave con ejemplos, y preguntas para discutir en clase. Activa «¿Por qué sucede esto?» arriba para ver además notas explicativas dentro de cada etapa.') +
+      '<div class="grid split wide"><div><h3 style="margin-bottom:12px">Conceptos</h3>' + g.map(function (x, i) { return '<details class="acc"' + (i === 0 ? ' open' : '') + '><summary>' + x[0] + '</summary><div class="body"><p>' + x[1] + '</p><div class="ex"><b>Ejemplo:</b> ' + x[2] + '</div></div></details>'; }).join('') + '</div>' +
+      '<div><h3 style="margin-bottom:12px">Preguntas de reflexión</h3>' + REFL.map(function (r, i) { var id = 'r' + i; return '<section class="card" style="margin-bottom:12px"><h4 style="font-size:15.5px">' + r[0] + '</h4><label class="small muted" for="note' + i + '" style="display:block;margin:8px 0 4px">Tu respuesta (se guarda en este navegador)</label><textarea id="note' + i + '" data-note="' + id + '" rows="3" style="font-family:var(--f-body)">' + esc(S.notes[id] || '') + '</textarea><details class="acc" style="margin-top:8px;border:0"><summary style="padding:6px 0;font-size:14px">Ver una pista</summary><div class="body" style="padding:0 0 4px">' + r[1] + '</div></details></section>'; }).join('') + '</div></div>';
+    $$('[data-note]').forEach(function (t) { t.addEventListener('input', function () { S.notes[t.dataset.note] = t.value; save(); }); });
+  },
+  update: function () { }
+};
+
+/* ---------- exportación ---------- */
+var DLCAP = null;
+(function () { try { if (window.claude && window.claude.use) window.claude.use('downloads').then(function (d) { DLCAP = d; }).catch(function () { }); } catch (e) { } })();
+function dialog(html) { var d = document.createElement('div'); d.className = 'dlg'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.innerHTML = '<div class="box">' + html + '</div>'; d.addEventListener('click', function (e) { if (e.target === d || e.target.closest('[data-close]')) d.remove(); }); document.body.appendChild(d); var f = d.querySelector('button, textarea'); if (f) f.focus(); return d; }
+function exportFile(name, text, note) {
+  var done = function () { toast('Listo: ' + name + (note ? '. ' + note : ''), 5200); };
+  if (DLCAP) { DLCAP.save({ filename: name, data: text }).then(done).catch(function (e) { if (e && e.code === 'declined') return; fallback(); }); return; }
+  fallback();
+  function fallback() {
+    var d = dialog('<h3>' + esc(name) + '</h3><p class="small ink2">Este entorno no permite descargar directamente. Copia el contenido y pégalo en un archivo con el mismo nombre.</p><textarea id="fb-t" readonly rows="12"></textarea><div class="row"><button class="btn primary" id="fb-c">Copiar todo</button><button class="btn" data-close="1">Cerrar</button></div>');
+    $('#fb-t', d).value = text;
+    $('#fb-c', d).addEventListener('click', function () { var t = $('#fb-t', d); t.select(); var ok = false; try { navigator.clipboard.writeText(text).then(function () { toast('Copiado'); }).catch(function () { document.execCommand('copy'); toast('Copiado'); }); ok = true; } catch (e) { } if (!ok) { try { document.execCommand('copy'); toast('Copiado'); } catch (e2) { } } });
+  }
+}
+function csvq(x) { var s = String(x === null || x === undefined ? '' : x); return /[",\n;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+function nr(x) { return (x === null || x === undefined || !isFinite(x)) ? '' : String(Math.round(x * 100) / 100); }
+function buildCSV(M) {
+  var b = S.biz, T = M.sim.totals, L = [], row = function (a) { L.push(a.map(csvq).join(',')); };
+  row(['DemandLab · resultados']); row(['Negocio', b.name]); row(['Producto', b.product]); row(['Unidad', b.unit]); row(['Período', b.period]); row(['Datos', b.simulated ? 'Simulados (ficticios)' : 'Del usuario']); row(['Método', M.rec.names[M.methodId]]); row(['Fecha', new Date().toISOString().slice(0, 10)]); row([]);
+  row(['Indicador', 'Valor']); [['Demanda proyectada (horizonte)', DL.sum(M.D)], ['Ventas estimadas', T.sales], ['Faltantes', T.lost], ['Nivel de servicio (cumplimiento)', T.fill], ['Inventario inicial', M.inv0], ['Inventario final', T.endInv], ['Stock de seguridad', M.ss], ['Punto de reposición S', M.S], ['Ingresos', T.revenue], ['Costos totales', T.cost], ['Utilidad estimada', T.profit], ['Capital inmovilizado máx.', T.capital]].forEach(function (r) { row([r[0], nr(r[1])]); });
+  row([]); row(['Período', 'Proyección base', 'Pesimista', 'Optimista', 'Pedidos confirmados', 'Demanda usada en el plan', 'Inv. inicial', 'Recepciones', 'Producido', 'Comprado', 'Ventas', 'Faltante', 'Inv. final']);
+  M.sim.rows.forEach(function (r, i) { row([plabel(r.t), nr(M.proj[i]), nr(M.pes[i]), nr(M.opt[i]), nr(M.conf[i]), nr(r.req), nr(r.begin), nr(r.receipts), nr(r.produce), nr(r.buy), nr(r.sales), nr(r.lost), nr(r.end)]); });
+  row([]); row(['Método', 'MAE', 'WAPE', 'Sesgo', 'Períodos evaluados']);
+  [['m1', 'Promedio móvil'], ['m2', 'Suavizamiento exponencial'], ['m3', 'Proyección ajustada']].forEach(function (m) { var r = M.F.res[m[0]]; row(r && r.n ? [m[1], nr(r.mae), r.wape === null ? '' : nr(r.wape * 100) + '%', r.bias === null ? '' : nr(r.bias * 100) + '%', r.n] : [m[1], 'n/d', 'n/d', 'n/d', r ? r.n : 0]); });
+  row([]); row(['Historial de ventas (' + b.period + ')']); M.y.forEach(function (v, i) { row([plabel(i + 1), nr(v)]); });
+  row([]); row(['Nota', 'Los escenarios son rangos orientativos y supuestos del usuario, no predicciones exactas.']);
+  return '﻿' + L.join('\r\n');
+}
+ACT.csv = function () { var M = getM(); if (!S.started || !M.ok) { toast('Primero completa los datos del negocio.'); return; } exportFile('DemandLab_' + S.biz.id + '_resultados.csv', buildCSV(M)); };
+function buildReport(M) {
+  var b = S.biz, T = M.sim.totals, p = per(), u = b.unit, today = new Date().toLocaleDateString('es', { year: 'numeric', month: 'long', day: 'numeric' });
+  var h1 = mkHistSeries(M), svg1 = Charts.staticSVG({ title: 'Pronóstico', cats: h1.cats, series: h1.series, bands: h1.bands, split: M.n, splitLabel: 'Hoy →', yMin: 0, noTable: true }, 820, 300);
+  var svg2 = Charts.staticSVG({ title: 'Inventario', cats: M.sim.rows.map(function (r) { return plabel(r.t, true); }), series: [{ name: 'Inventario final', short: 'Inv. final', type: 'area', color: 'var(--s-opt)', data: M.sim.rows.map(function (r) { return r.end; }) }, { name: 'Stock de seguridad', short: 'Seguridad', color: 'var(--s-pes)', dash: '5 4', dots: false, data: M.sim.rows.map(function () { return M.ss; }) }], yMin: 0 }, 820, 240);
+  var css = Array.prototype.map.call(document.styleSheets, function (s) { try { return Array.prototype.map.call(s.cssRules, function (r) { return r.cssText; }).join('\n'); } catch (e) { return ''; } }).join('\n');
+  var ins = DL.insights(b, M), al = DL.alerts(b, M);
+  var tb = '<table><thead><tr><th>Período</th><th>Demanda usada</th><th>Recepciones</th><th>Producir / comprar</th><th>Ventas</th><th>Faltante</th><th>Inv. final</th></tr></thead><tbody>' + M.sim.rows.map(function (r) { return '<tr><td>' + plabel(r.t) + '</td><td>' + f0(r.req) + '</td><td>' + f0(r.receipts) + '</td><td>' + f0(r.placed) + '</td><td>' + f0(r.sales) + '</td><td>' + (r.lost > 0.5 ? f0(r.lost) : '—') + '</td><td>' + f0(r.end) + '</td></tr>'; }).join('') + '</tbody></table>';
+  var act = b.externals.filter(function (e) { return e.on; });
+  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>DemandLab · reporte de ' + esc(b.name) + '</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>' + css.replace(/body\s*\{[^}]*\}/, '') + '\nbody{background:#fff;color:#14213F;font:14px/1.5 "IBM Plex Sans","Segoe UI",sans-serif;max-width:900px;margin:0 auto;padding:28px}h1{font-size:28px}h2{font-size:18px;margin:22px 0 8px;border-bottom:2px solid #14274E;padding-bottom:4px}.k{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.k div{border:1px solid #D8DFEA;border-radius:8px;padding:8px 10px}.k b{display:block;font-size:18px}.k span{font-size:11px;color:#44516B}svg{max-width:100%}@media print{body{padding:0}h2{break-after:avoid}section,table,svg{break-inside:avoid}}</style></head><body><h1>DemandLab · reporte de planificación</h1><p>' + esc(b.name) + ' · ' + esc(b.product) + ' · período ' + b.period + ' · ' + today + (b.simulated ? ' · <b>datos simulados</b>' : '') + '</p>' +
+    '<h2>Indicadores</h2><div class="k"><div><b>' + f0(DL.sum(M.D)) + '</b><span>Demanda proyectada (' + esc(u) + ')</span></div><div><b>' + f0(T.sales) + '</b><span>Ventas estimadas</span></div><div><b>' + pc(T.fill, 1) + '</b><span>Cumplimiento</span></div><div><b>' + f0(M.ss) + '</b><span>Stock de seguridad</span></div><div><b>' + money(T.revenue) + '</b><span>Ingresos</span></div><div><b>' + money(T.cost) + '</b><span>Costos</span></div><div><b>' + money(T.profit) + '</b><span>Utilidad</span></div><div><b>' + money(T.capital) + '</b><span>Capital inmovilizado</span></div></div>' +
+    '<h2>Pronóstico</h2><p>' + esc(DL.explainForecast(b, M)) + '</p><p><small>Método: ' + M.rec.names[M.methodId] + '. ' + esc(M.rec.reason) + '</small></p>' + svg1 +
+    '<h2>Hipótesis</h2><p>' + (act.length ? act.map(function (e) { return esc(e.label) + ' (' + (e.pct > 0 ? '+' : '') + DL.fmt(e.pct, 1) + ' %)'; }).join('; ') + '.' : 'Sin variables externas activas.') + ' Lead time: ' + M.P.L + ' ' + p.pl + '. Nivel de servicio: ' + f1(M.P.sl) + ' %. Capacidad: ' + (isFinite(M.P.cap) ? f0(M.P.cap) + ' por ' + p.l : 'sin límite') + '.</p>' +
+    '<h2>Plan e inventario proyectado</h2>' + svg2 + tb + '<h2>Alertas</h2><ul>' + al.map(function (a) { return '<li><b>' + esc(a.t) + '.</b> ' + esc(a.m) + '</li>'; }).join('') + '</ul><h2>Recomendaciones</h2><ul>' + ins.map(function (a) { return '<li><b>' + esc(a.t) + '.</b> ' + esc(a.m) + '</li>'; }).join('') + '</ul><p><small>Los escenarios son rangos orientativos y las variables externas son supuestos del usuario. Reglas de decisión simples, sin modelo de IA. Para obtener un PDF, abre este archivo y usa Imprimir → Guardar como PDF.</small></p></body></html>';
+}
+ACT.report = function () { var M = getM(); if (!S.started || !M.ok) { toast('Primero completa los datos del negocio.'); return; } exportFile('DemandLab_' + S.biz.id + '_reporte.html', buildReport(M), 'Ábrelo y usa Imprimir → Guardar como PDF'); };
+ACT.reset = function () { dialog('<h3>¿Reiniciar DemandLab?</h3><p class="ink2">Se borrarán los datos guardados en este navegador, incluido «Tu propio negocio», y volverás a la pantalla inicial.</p><div class="row"><button class="btn primary" id="rs-ok">Sí, reiniciar</button><button class="btn" data-close="1">Cancelar</button></div>'); $('#rs-ok').addEventListener('click', function () { try { localStorage.removeItem(KEY); } catch (e) { } S.store = {}; S.biz = null; S.started = false; S.notes = {}; S.wi = null; _mk = null; $$('.dlg').forEach(function (d) { d.remove(); }); go('datos'); toast('DemandLab reiniciado.'); }); };
+ACT.edu = function () { S.edu = !S.edu; save(); renderTop(); };
+ACT.home = function () { if (S.started) { S.started = false; go('datos'); } };
+
+/* what-if: su propio manejador */
+document.addEventListener('input', function (e) {
+  var el = e.target; if (!el.dataset || !el.dataset.w || !S.wi) return;
+  var k = el.dataset.w, v = el.dataset.wb ? el.checked : Number(el.value); if (!el.dataset.wb && !isFinite(v)) return;
+  S.wi[k] = v; S.wi.preset = ''; $$('[data-w="' + k + '"]').forEach(function (o) { if (o !== el && !o.dataset.wb) o.value = v; }); $$('.chip[data-act="wipre"]').forEach(function (c) { c.setAttribute('aria-pressed', 'false'); });
+  V.whatif.update();
+});
+
+/* ---------- inicio ---------- */
+function setTopH() { var t = $('.top'); if (t) document.documentElement.style.setProperty('--topH', (t.offsetHeight + 12) + 'px'); }
+function init() {
+  var s = load();
+  if (s && s.store) {
+    Object.keys(s.store).forEach(function (id) { var d = DL.newBiz(); var o = s.store[id]; for (var k in o) d[k] = o[k]; d.dec = Object.assign({ produceTotal: null, buyTotal: null, marketing: null, price: null, targetInv: null, capacity: null, serviceLevel: null, leadTime: null }, o.dec || {}); if (!d.externals || !d.externals.length) d.externals = DL.defaultExternals(); S.store[id] = d; });
+    S.edu = !!s.edu; S.notes = s.notes || {};
+    if (s.sel && S.store[s.sel] && s.started) { S.biz = S.store[s.sel]; S.started = true; S.view = V[s.view] ? s.view : 'datos'; }
+  }
+  initEvents(); renderRail(); renderTop(); go(S.view); setTopH(); window.addEventListener('resize', setTopH);
+}
+document.addEventListener('DOMContentLoaded', init);
+
+</script>
+
+</body></html>
